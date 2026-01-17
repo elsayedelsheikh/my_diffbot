@@ -18,13 +18,13 @@
 
   <!-- Base Link -->
   <link name="base_footprint"/>
-    
+
   <joint name="footprint_joint" type="fixed">
     <parent link="base_footprint"/>
     <child link="${prefix}base_link"/>
     <origin xyz="0.0 0.0 0.05" rpy="0.0 0.0 0.0"/>
   </joint>
-  
+
   <link name="${prefix}base_link">
     <collision>
       <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
