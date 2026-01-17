@@ -14,7 +14,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             "frame_id",
-            default_value="laser_frame",
+            default_value="lidar_link",
             description="Specifying frame_id of lidar",
         ),
     ]
