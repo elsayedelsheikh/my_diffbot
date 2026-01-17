@@ -37,7 +37,7 @@ ekf_filter_node:
 #         estimation node from robot_localization! However, that instance should *not* fuse the global data.
         map_frame: map                   # Defaults to "map" if unspecified
         odom_frame: odom                 # Defaults to "odom" if unspecified
-        base_link_frame: base_link       # Defaults to "base_link" if unspecified
+        base_link_frame: base_footprint  # Defaults to "base_link" if unspecified
         world_frame: odom                # Defaults to the value of odom_frame if unspecified
 
 # The filter accepts an arbitrary number of inputs from each input message type (nav_msgs/Odometry,
@@ -60,14 +60,14 @@ ekf_filter_node:
 # do not provide some of the state variables estimated by the filter. For example, a TwistWithCovarianceStamped message
 # has no pose information, so the first six values would be meaningless in that case. Each vector defaults to all false
 # if unspecified, effectively making this parameter required for each sensor.
-        odom0: lidar_odom
+        odom0: base_odom
         odom0_config: [true, true, false,
                        false, false, true,
                        true, false, false,
                        false, false, false,
                        false, false, false]
 
-        imu0: zed/zed_node/imu/data
+        imu0: imu/data
         imu0_config: [false, false, false,
                       false, false, true,
                       false, false, false,

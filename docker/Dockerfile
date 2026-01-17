@@ -47,7 +47,7 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 RUN mkdir -p /base_ws/src
 WORKDIR /base_ws/src
 #COPY dependencies.repos .
-#RUN vcs import < dependencies.repos
+RUN vcs import < dependencies.repos
 
 # Build the base Colcon workspace, installing dependencies first.
 WORKDIR /base_ws
