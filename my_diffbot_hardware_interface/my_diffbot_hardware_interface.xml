@@ -1,0 +1,9 @@
+<library path="my_diffbot_hardware_interface">
+  <class name="my_diffbot_hardware_interface/My_diffbotSystemHardware"
+         type="my_diffbot_hardware_interface::My_diffbotSystemHardware"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      The ros2_control DiffBot using a system hardware interface-type. It uses velocity command and position state interface. implementing a hardware interface for My_diffbot differential-drive mobile robot.
+    </description>
+  </class>
+</library>

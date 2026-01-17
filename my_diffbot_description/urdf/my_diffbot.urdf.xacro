@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="my_diffbot_robot">
+  <!-- Arguments -->
+  <xacro:arg name="prefix" default="" />
+  <xacro:arg name="sim_gazebo" default="false" />
+  <xacro:arg name="use_mock_hardware" default="false" />
+  <xacro:arg name="serial_port" default="/dev/ttyUSB0" />
+  <xacro:arg name="baud_rate" default="57600" />
+  <xacro:arg name="encoder_counts_per_revolution" default="500" />
+  <xacro:arg name="timeout_ms" default="1000" />
+
+  <!-- Import my_diffbot description -->
+  <xacro:include filename="$(find my_diffbot_description)/urdf/my_diffbot_description.xacro" />
+  <xacro:diffbot prefix="$(arg prefix)" />
+
+  <!-- Import Gz sim materials and plugins -->
+  <xacro:if value="$(arg sim_gazebo)">
+    <xacro:include filename="$(find my_diffbot_description)/urdf/my_diffbot_gz_sim.xacro" />
+  </xacro:if>
+
+  <!-- Import my_diffbot ros2_control if (sim_gazebo == false) -->
+  <xacro:unless value="$(arg sim_gazebo)">
+    <xacro:include filename="$(find my_diffbot_description)/urdf/my_diffbot_ros2_control.xacro" />
+    <xacro:my_diffbot_ros2_control
+    name="My_diffbot"
+    mock_hardware="$(arg use_mock_hardware)"
+    serial_port="$(arg serial_port)" baud_rate="$(arg baud_rate)"
+    encoder_counts_per_revolution="$(arg encoder_counts_per_revolution)"
+    timeout_ms="$(arg timeout_ms)"/>
+  </xacro:unless>
+
+</robot>

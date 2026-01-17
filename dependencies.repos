@@ -1,0 +1,6 @@
+repositories:
+  # LIDAR LD06
+  ldlidar_stl_ros2:
+    type: git
+    url: https://github.com/ldrobotSensorTeam/ldlidar_stl_ros2.git
+    version: master

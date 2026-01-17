@@ -1,0 +1,71 @@
+# Docker Compose file for TurtleBot Behavior Examples
+#
+# Usage:
+#
+# To build the images:
+#   docker compose build
+#
+# To start up a specific service by name:
+#   docker compose up <service_name>
+#
+# To open an interactive shell to a running container:
+#   docker exec -it dev bash
+
+services:
+  # Base image containing dependencies
+  base:
+    image: my_diffbot:base
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        ROS_DISTRO: jazzy
+      target: base
+    # Interactive shell
+    stdin_open: true
+    tty: true
+    # Networking and IPC for ROS 2
+    network_mode: host
+    ipc: host
+    # Needed to display graphical applications
+    privileged: True
+
+  # Overlay image containing the example source code.
+  overlay:
+    extends: base
+    image: my_diffbot:overlay
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: overlay
+
+  # Developer container
+  dev:
+    extends: overlay
+    image: my_diffbot:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dev
+      args:
+        - UID=${UID:-1000}
+        - GID=${UID:-1000}
+        - USERNAME=${USERNAME:-devuser}
+    volumes:
+      # Mount the source code
+      - ./my_diffbot_bringup:/overlay_ws/src/my_diffbot_bringup:rw
+      - ./my_diffbot_description:/overlay_ws/src/my_diffbot_description:rw
+      - ./my_diffbot_hardware_interface:/overlay_ws/src/my_diffbot_hardware_interface:rw
+      - ./my_diffbot_localization:/overlay_ws/src/my_diffbot_localization:rw
+      - ./my_diffbot_navigation:/overlay_ws/src/my_diffbot_navigation:rw
+      - ./dependencies:/overlay_ws/src/dependencies:rw
+      # Mount colcon build artifacts for faster rebuilds
+      - ./.colcon/build/:/overlay_ws/build/:rw
+      - ./.colcon/install/:/overlay_ws/install/:rw
+      - ./.colcon/log/:/overlay_ws/log/:rw
+    user: ${USERNAME:-devuser}
+    command: sleep infinity
+
+  bringup-robot:
+    extends: dev
+    command: ros2 launch my_diffbot_bringup bringup_robot.launch.py
