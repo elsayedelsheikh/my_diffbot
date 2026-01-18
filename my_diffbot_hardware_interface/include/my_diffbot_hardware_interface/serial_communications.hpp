@@ -11,6 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cmath>
 
 namespace my_diffbot_hardware_interface
 {
@@ -118,10 +119,10 @@ public:
   void set_motor_speeds(double left_motor_rad_per_sec, double right_motor_rad_per_sec)
   {
     int motor_l_counts_per_loop = static_cast<int>(
-      left_motor_rad_per_sec / rads_per_count_ / mcu_loop_rate_
+      std::round(left_motor_rad_per_sec / rads_per_count_ / mcu_loop_rate_)
     );
     int motor_r_counts_per_loop = static_cast<int>(
-      right_motor_rad_per_sec / rads_per_count_ / mcu_loop_rate_
+      std::round(right_motor_rad_per_sec / rads_per_count_ / mcu_loop_rate_)
     );
 
     set_motor_values(motor_l_counts_per_loop, motor_r_counts_per_loop);

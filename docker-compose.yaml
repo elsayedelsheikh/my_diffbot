@@ -62,9 +62,28 @@ services:
       - ./.colcon/build/:/overlay_ws/build/:rw
       - ./.colcon/install/:/overlay_ws/install/:rw
       - ./.colcon/log/:/overlay_ws/log/:rw
+    environment:
+        ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
+        RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
     user: ${USERNAME:-devuser}
     command: sleep infinity
 
   bringup-robot:
     extends: dev
     command: ros2 launch my_diffbot_bringup bringup_robot.launch.py
+
+  teleop-keyboard:
+    extends: dev
+    command: ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p stamped:=true
+
+  bringup-controllers:
+    extends: dev
+    command: ros2 launch my_diffbot_bringup robot_controllers.launch.py
+
+  bringup-lidar:
+    extends: dev
+    command: ros2 launch my_diffbot_bringup lidar_bringup.launch.py
+
+  start-navigation:
+    extends: dev
+    command: ros2 launch my_diffbot_navigation nav_bringup_launch.py
