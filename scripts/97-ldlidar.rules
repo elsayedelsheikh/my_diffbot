@@ -1,0 +1,2 @@
+# set the udev rule , make the device_port be fixed by ldlidar
+KERNEL=="ttyTHS1", MODE="0666", SYMLINK+="lidar"

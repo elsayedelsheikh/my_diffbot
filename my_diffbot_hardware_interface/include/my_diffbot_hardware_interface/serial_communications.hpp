@@ -129,6 +129,13 @@ public:
     // 3. Save the difference (the part we couldn't send) for the next loop
     left_remainder_ = l_raw - l_cmd;
     right_remainder_ = r_raw - r_cmd;
+
+    // 4. Let's add (10.0 rad/sec) in case of rotation
+    int offset = 10;
+    if ((l_cmd<0) != (r_cmd<0)) {
+	l_cmd += (l_cmd >0) ? offset: -offset;
+	r_cmd += (r_cmd >0) ? offset: -offset;
+    }
     set_motor_values(l_cmd, r_cmd);
   }
 
@@ -187,7 +194,7 @@ private:
   {
     std::stringstream ss;
     ss << "m " << left_motor_value << " " << right_motor_value << "\r";
-    // RCLCPP_INFO(logger_, "SEND COMMAND: %s", ss.str().c_str());
+    RCLCPP_DEBUG(logger_, "SEND COMMAND: %s", ss.str().c_str());
     send_command(ss.str());
   }
 

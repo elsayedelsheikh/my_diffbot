@@ -36,7 +36,7 @@ my_diffbot_base_controller:
 
     # Limits configuration
     linear.x.max_velocity: 0.7
-    angular.z.max_velocity: 5.0
+    angular.z.max_velocity: 1.5
 
-    linear.x.max_acceleration: 3.0
-    angular.z.max_acceleration: 6.0
+    linear.x.max_acceleration: 1.0
+    angular.z.max_acceleration: 2.0

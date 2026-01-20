@@ -62,6 +62,8 @@ services:
       - ./.colcon/build/:/overlay_ws/build/:rw
       - ./.colcon/install/:/overlay_ws/install/:rw
       - ./.colcon/log/:/overlay_ws/log/:rw
+      # Mount Devices
+      - /dev/lidar:/dev/lidar:rw
     environment:
         ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
         RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
