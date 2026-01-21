@@ -1,6 +1,10 @@
 repositories:
-  # LIDAR LD06
-  ldlidar_stl_ros2:
+#  ldlidar_stl_ros2:
+#    type: git
+#    url: https://github.com/ldrobotSensorTeam/ldlidar_stl_ros2.git
+#    version: master
+
+  bno055:
     type: git
-    url: https://github.com/ldrobotSensorTeam/ldlidar_stl_ros2.git
-    version: master
+    url: https://github.com/flynneva/bno055.git
+    version: main
