@@ -9,46 +9,46 @@ from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
-    pkg_dir = get_package_share_directory("my_diffbot_navigation")
-    use_sim_time = LaunchConfiguration("use_sim_time")
-    use_rviz = LaunchConfiguration("use_rviz")
+    pkg_dir = get_package_share_directory('my_diffbot_navigation')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    use_rviz = LaunchConfiguration('use_rviz')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
-        "use_sim_time",
-        default_value="false",
-        description="Use simulation (Gazebo) clock if true",
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation (Gazebo) clock if true',
     )
 
     declare_use_rviz_cmd = DeclareLaunchArgument(
-        "use_rviz",
-        default_value="false",
-        description="Use visualization if true",
+        'use_rviz',
+        default_value='false',
+        description='Use visualization if true',
     )
 
     slam = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            [os.path.join(pkg_dir, "launch", "my_diffbot_slam_launch.py")]
+            [os.path.join(pkg_dir, 'launch', 'my_diffbot_slam_launch.py')]
         ),
         launch_arguments={
-            "use_sim_time": use_sim_time,
+            'use_sim_time': use_sim_time,
         }.items(),
     )
 
     nav2 = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            [os.path.join(pkg_dir, "launch", "my_diffbot_navigation_launch.py")]
+            [os.path.join(pkg_dir, 'launch', 'my_diffbot_navigation_launch.py')]
         ),
         launch_arguments={
-            "use_sim_time": use_sim_time,
+            'use_sim_time': use_sim_time,
         }.items(),
     )
 
     rviz2 = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            [os.path.join(pkg_dir, "launch", "rviz_launch.py")]
+            [os.path.join(pkg_dir, 'launch', 'rviz_launch.py')]
         ),
         launch_arguments={
-            "use_sim_time": use_sim_time,
+            'use_sim_time': use_sim_time,
         }.items(),
         condition=IfCondition(use_rviz),
     )
