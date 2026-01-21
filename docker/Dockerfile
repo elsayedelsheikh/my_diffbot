@@ -116,7 +116,7 @@ RUN chown -R ${UID}:${GID} /overlay_ws/
 
 # Add user to dialout and i2c groups for device access
 RUN usermod -aG dialout ${USERNAME}
-#RUN groupadd -r i2c 
+#RUN groupadd -r i2c
 RUN usermod -aG i2c ${USERNAME}
 
 # Set up the entrypoint, including it in the .bashrc for interactive shells
