@@ -86,6 +86,10 @@ services:
     extends: dev
     command: ros2 launch my_diffbot_bringup lidar_bringup.launch.py
 
+  bringup-imu:
+    extends: dev
+    command: ros2 launch my_diffbot_bringup imu_bno055.launch.py
+
   start-navigation:
     extends: dev
     command: ros2 launch my_diffbot_navigation nav_bringup_launch.py
