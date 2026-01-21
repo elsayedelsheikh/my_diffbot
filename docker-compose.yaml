@@ -64,6 +64,8 @@ services:
       - ./.colcon/log/:/overlay_ws/log/:rw
       # Mount Devices
       - /dev/lidar:/dev/lidar:rw
+      # IMU
+      - ./dependencies/bno055:/overlay_ws/src/bno055:rw
     environment:
         ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
         RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
