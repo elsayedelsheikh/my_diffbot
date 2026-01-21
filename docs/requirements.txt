@@ -1,6 +1,0 @@
-esbonio
-sphinx
-sphinx-autobuild
-sphinx-copybutton
-sphinx_rtd_theme
-sphinxcontrib-youtube
