@@ -11,6 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cmath>
 
 namespace my_diffbot_hardware_interface
 {
@@ -117,14 +118,25 @@ public:
   /// @param right_motor_rad_per_sec Desired speed for right motor in radians per second
   void set_motor_speeds(double left_motor_rad_per_sec, double right_motor_rad_per_sec)
   {
-    int motor_l_counts_per_loop = static_cast<int>(
-      left_motor_rad_per_sec / rads_per_count_ / mcu_loop_rate_
-    );
-    int motor_r_counts_per_loop = static_cast<int>(
-      right_motor_rad_per_sec / rads_per_count_ / mcu_loop_rate_
-    );
+    // 1. Calculate the raw floating point counts needed for this loop
+    double l_raw = (left_motor_rad_per_sec / rads_per_count_ / mcu_loop_rate_) + left_remainder_;
+    double r_raw = (right_motor_rad_per_sec / rads_per_count_ / mcu_loop_rate_) + right_remainder_;
 
-    set_motor_values(motor_l_counts_per_loop, motor_r_counts_per_loop);
+    // 2. Convert to int the MCU expects
+    int l_cmd = static_cast<int>(std::round(l_raw));
+    int r_cmd = static_cast<int>(std::round(r_raw));
+
+    // 3. Save the difference (the part we couldn't send) for the next loop
+    left_remainder_ = l_raw - l_cmd;
+    right_remainder_ = r_raw - r_cmd;
+
+    // 4. Let's add offset  in case of rotation
+    int offset = 13;
+    if ((l_cmd<0) != (r_cmd<0)) {
+	l_cmd += (l_cmd >0) ? offset: -offset;
+	r_cmd += (r_cmd >0) ? offset: -offset;
+    }
+    set_motor_values(l_cmd, r_cmd);
   }
 
   /// @brief Read encoder values for left and right motors
@@ -182,6 +194,7 @@ private:
   {
     std::stringstream ss;
     ss << "m " << left_motor_value << " " << right_motor_value << "\r";
+    RCLCPP_DEBUG(logger_, "SEND COMMAND: %s", ss.str().c_str());
     send_command(ss.str());
   }
 
@@ -215,6 +228,8 @@ private:
   double rads_per_count_;
   int mcu_loop_rate_;
   rclcpp::Logger logger_ {rclcpp::get_logger("SerialCommunications")};
+  double left_remainder_ = 0.0;
+  double right_remainder_ = 0.0;
 };
 
 }  // namespace my_diffbot_hardware_interface

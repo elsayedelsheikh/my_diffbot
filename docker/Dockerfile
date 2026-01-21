@@ -13,21 +13,17 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
    && apt-get -y install --no-install-recommends \
       curl \
-      git \
-      tmux \
-      neovim \
       libi2c-dev \
       python3-pip \
       libserial-dev \
       ros-${ROS_DISTRO}-xacro \
       ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
-      ros-${ROS_DISTRO}-foxglove-bridge \
       ros-${ROS_DISTRO}-teleop-twist-keyboard  \
       ros-${ROS_DISTRO}-controller-manager \
+      ros-${ROS_DISTRO}-ros2controlcli \
       ros-${ROS_DISTRO}-hardware-interface \
       ros-${ROS_DISTRO}-diff-drive-controller \
       ros-${ROS_DISTRO}-joint-state-broadcaster \
-      ros-${ROS_DISTRO}-ros2controlcli \
       ros-${ROS_DISTRO}-robot-localization \
       ros-${ROS_DISTRO}-navigation2 \
       ros-${ROS_DISTRO}-nav2-bringup \
@@ -37,23 +33,23 @@ RUN apt-get update \
    && apt-get clean -y \
    && rm -rf /var/lib/apt/lists/*
 
-# Install additional Python modules
-RUN pip3 install --break-system-packages matplotlib transforms3d pyserial smbus
-
 # Use Cyclone DDS as middleware
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # Create Colcon workspace with external dependencies
 RUN mkdir -p /base_ws/src
 WORKDIR /base_ws/src
+
+COPY dependencies/ldlidar_stl_ros2 .
+
 #COPY dependencies.repos .
-RUN vcs import < dependencies.repos
+#RUN vcs import < dependencies.repos
 
 # Build the base Colcon workspace, installing dependencies first.
 WORKDIR /base_ws
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
  && apt-get update -y \
- && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y \
+ && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -r -y \
  && colcon build --symlink-install
 
 # Set up the entrypoint
@@ -77,7 +73,7 @@ COPY ./my_diffbot_hardware_interface/ ./src/my_diffbot_hardware_interface/
 COPY ./my_diffbot_localization/ ./src/my_diffbot_localization/
 COPY ./my_diffbot_navigation/ ./src/my_diffbot_navigation/
 RUN source /base_ws/install/setup.bash \
- && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y \
+ && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -r -y \
  && colcon build --symlink-install
 
 # Set up the entrypoint
@@ -96,7 +92,7 @@ ARG GID=${UID}
 
 # Install extra tools for development
 RUN apt-get update && apt-get install -y --no-install-recommends \
- gdb gdbserver nano neovim tmux
+ gdb gdbserver nano neovim tmux git
 
 # In Ubuntu 24.04, there is already a user named "ubuntu" with UID 1000.
 # Delete this in the (common) event that the user on the host also has this UID.

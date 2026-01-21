@@ -12,21 +12,21 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     # Input parameters declaration
-    namespace = LaunchConfiguration("namespace")
-    nav2_params_file = LaunchConfiguration("nav2_params_file")
-    slam_params_file = LaunchConfiguration("slam_params_file")
-    use_sim_time = LaunchConfiguration("use_sim_time")
-    autostart = LaunchConfiguration("autostart")
-    use_respawn = LaunchConfiguration("use_respawn")
-    log_level = LaunchConfiguration("log_level")
+    namespace = LaunchConfiguration('namespace')
+    nav2_params_file = LaunchConfiguration('nav2_params_file')
+    slam_params_file = LaunchConfiguration('slam_params_file')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    autostart = LaunchConfiguration('autostart')
+    use_respawn = LaunchConfiguration('use_respawn')
+    log_level = LaunchConfiguration('log_level')
 
     # Variables
-    lifecycle_nodes = ["map_saver"]
+    lifecycle_nodes = ['map_saver']
 
     # Getting directories and launch-files
-    params_dir = get_package_share_directory("my_diffbot_navigation")
-    slam_toolbox_dir = get_package_share_directory("slam_toolbox")
-    slam_launch_file = os.path.join(slam_toolbox_dir, "launch", "online_sync_launch.py")
+    params_dir = get_package_share_directory('my_diffbot_navigation')
+    slam_toolbox_dir = get_package_share_directory('slam_toolbox')
+    slam_launch_file = os.path.join(slam_toolbox_dir, 'launch', 'online_sync_launch.py')
 
     # Create our own temporary YAML files that include substitutions
     configured_params = ParameterFile(
@@ -41,62 +41,62 @@ def generate_launch_description():
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
-        "namespace", default_value="", description="Top-level namespace"
+        'namespace', default_value='', description='Top-level namespace'
     )
 
     declare_nav2_params_file_cmd = DeclareLaunchArgument(
-        "nav2_params_file",
-        default_value=os.path.join(params_dir, "params", "nav2_params.yaml"),
-        description="Full path to the ROS2 parameters file to use for all launched nodes",
+        'nav2_params_file',
+        default_value=os.path.join(params_dir, 'params', 'nav2_params.yaml'),
+        description='Full path to the ROS2 parameters file to use for all launched nodes',
     )
     declare_slam_params_file_cmd = DeclareLaunchArgument(
-        "slam_params_file",
-        default_value=os.path.join(params_dir, "params", "slam_online_sync.yaml"),
-        description="Full path to the ROS2 parameters file to use for all launched nodes",
+        'slam_params_file',
+        default_value=os.path.join(params_dir, 'params', 'slam_online_sync.yaml'),
+        description='Full path to the ROS2 parameters file to use for all launched nodes',
     )
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
-        "use_sim_time",
-        default_value="false",
-        description="Use simulation (Gazebo) clock if true",
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation (Gazebo) clock if true',
     )
 
     declare_autostart_cmd = DeclareLaunchArgument(
-        "autostart",
-        default_value="True",
-        description="Automatically startup the nav2 stack",
+        'autostart',
+        default_value='True',
+        description='Automatically startup the nav2 stack',
     )
 
     declare_use_respawn_cmd = DeclareLaunchArgument(
-        "use_respawn",
-        default_value="False",
-        description="Whether to respawn if a node crashes. Applied when composition is disabled.",
+        'use_respawn',
+        default_value='False',
+        description='Whether to respawn if a node crashes. Applied when composition is disabled.',
     )
 
     declare_log_level_cmd = DeclareLaunchArgument(
-        "log_level", default_value="info", description="log level"
+        'log_level', default_value='info', description='log level'
     )
 
     # Nodes launching commands
     start_map_server = GroupAction(
         actions=[
-            SetParameter("use_sim_time", use_sim_time),
+            SetParameter('use_sim_time', use_sim_time),
             Node(
-                package="nav2_map_server",
-                executable="map_saver_server",
-                output="screen",
+                package='nav2_map_server',
+                executable='map_saver_server',
+                output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                arguments=["--ros-args", "--log-level", log_level],
+                arguments=['--ros-args', '--log-level', log_level],
                 parameters=[configured_params],
             ),
             Node(
-                package="nav2_lifecycle_manager",
-                executable="lifecycle_manager",
-                name="lifecycle_manager_slam",
-                output="screen",
-                arguments=["--ros-args", "--log-level", log_level],
-                parameters=[{"autostart": autostart}, {"node_names": lifecycle_nodes}],
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_slam',
+                output='screen',
+                arguments=['--ros-args', '--log-level', log_level],
+                parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
             ),
         ]
     )
@@ -104,15 +104,15 @@ def generate_launch_description():
     start_slam_toolbox_cmd = GroupAction(
         actions=[
             # Remapping required to have a slam session subscribe & publish in optional namespaces
-            SetRemap(src="/scan", dst="scan"),
-            SetRemap(src="/tf", dst="tf"),
-            SetRemap(src="/tf_static", dst="tf_static"),
-            SetRemap(src="/map", dst="map"),
+            SetRemap(src='/scan', dst='scan'),
+            SetRemap(src='/tf', dst='tf'),
+            SetRemap(src='/tf_static', dst='tf_static'),
+            SetRemap(src='/map', dst='map'),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(slam_launch_file),
                 launch_arguments={
-                    "use_sim_time": use_sim_time,
-                    "slam_params_file": slam_params_file,
+                    'use_sim_time': use_sim_time,
+                    'slam_params_file': slam_params_file,
                 }.items(),
             ),
         ]
