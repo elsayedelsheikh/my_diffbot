@@ -64,6 +64,8 @@ services:
       - ./.colcon/log/:/overlay_ws/log/:rw
       # Mount Devices
       - /dev/lidar:/dev/lidar:rw
+      # IMU
+      - ./dependencies/bno055:/overlay_ws/src/bno055:rw
     environment:
         ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
         RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
@@ -85,6 +87,10 @@ services:
   bringup-lidar:
     extends: dev
     command: ros2 launch my_diffbot_bringup lidar_bringup.launch.py
+
+  bringup-imu:
+    extends: dev
+    command: ros2 launch my_diffbot_bringup imu_bno055.launch.py
 
   start-navigation:
     extends: dev

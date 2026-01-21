@@ -33,6 +33,9 @@ RUN apt-get update \
    && apt-get clean -y \
    && rm -rf /var/lib/apt/lists/*
 
+# For IMU node
+RUN python3 -m pip install smbus pyserial transforms3d --break-system-packages
+
 # Use Cyclone DDS as middleware
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
@@ -40,7 +43,7 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 RUN mkdir -p /base_ws/src
 WORKDIR /base_ws/src
 
-COPY dependencies/ldlidar_stl_ros2 .
+COPY dependencies .
 
 #COPY dependencies.repos .
 #RUN vcs import < dependencies.repos
@@ -113,7 +116,8 @@ RUN chown -R ${UID}:${GID} /overlay_ws/
 
 # Add user to dialout and i2c groups for device access
 RUN usermod -aG dialout ${USERNAME}
-RUN groupadd -r i2c && usermod -aG i2c ${USERNAME}
+#RUN groupadd -r i2c
+RUN usermod -aG i2c ${USERNAME}
 
 # Set up the entrypoint, including it in the .bashrc for interactive shells
 USER ${USERNAME}
