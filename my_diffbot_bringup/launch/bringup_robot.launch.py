@@ -20,9 +20,8 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             'use_sensor_fusion',
-            default_value='false',
+            default_value='true',
             choices=['true', 'false'],
-            description='Start robot with mock hardware mirroring command to its states.',
         )
     )
     declared_arguments.append(
