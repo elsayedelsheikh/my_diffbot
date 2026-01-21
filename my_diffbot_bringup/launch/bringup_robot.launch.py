@@ -107,9 +107,25 @@ def generate_launch_description():
         condition=IfCondition(use_sensor_fusion),
     )
 
+    # IMU BNO055
+    imu_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare('my_diffbot_bringup'),
+                        'launch',
+                        'imu_bno055.launch.py',
+                    ]
+                )
+            ]
+        )
+    )
+
     launch_files = [
         robot_controllers_launch,
         lidar_launch,
+        imu_launch,
         sensor_fusion_launch,
     ]
 
