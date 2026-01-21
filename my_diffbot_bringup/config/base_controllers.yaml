@@ -28,7 +28,7 @@ my_diffbot_base_controller:
 
     position_feedback: true
     open_loop: false
-    enable_odom_tf: true
+    enable_odom_tf: false
 
     cmd_vel_timeout: 5.0 # seconds after which input command is considered staled.
     publish_limited_velocity: true
