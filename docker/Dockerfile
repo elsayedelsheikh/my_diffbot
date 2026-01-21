@@ -33,6 +33,9 @@ RUN apt-get update \
    && apt-get clean -y \
    && rm -rf /var/lib/apt/lists/*
 
+# For IMU node
+RUN python3 -m pip install smbus pyserial
+
 # Use Cyclone DDS as middleware
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
@@ -40,7 +43,7 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 RUN mkdir -p /base_ws/src
 WORKDIR /base_ws/src
 
-COPY dependencies/ldlidar_stl_ros2 .
+COPY dependencies .
 
 #COPY dependencies.repos .
 #RUN vcs import < dependencies.repos
