@@ -81,17 +81,15 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        base_footprint:
+          Value: true
         base_link:
           Value: true
-        camera_depth_optical_frame:
+        caster_frontal_wheel:
           Value: true
-        camera_link:
+        caster_rear_wheel:
           Value: true
-        caster1:
-          Value: true
-        caster2:
-          Value: true
-        caster3:
+        imu_link:
           Value: true
         left_wheel:
           Value: true
@@ -100,24 +98,6 @@ Visualization Manager:
         map:
           Value: true
         odom:
-          Value: true
-        ray_link1:
-          Value: true
-        ray_link2:
-          Value: true
-        ray_link3:
-          Value: true
-        ray_link4:
-          Value: true
-        ray_link5:
-          Value: true
-        ray_link6:
-          Value: true
-        ray_link7:
-          Value: true
-        ray_link8:
-          Value: true
-        ray_link9:
           Value: true
         right_wheel:
           Value: true
@@ -129,60 +109,40 @@ Visualization Manager:
       Tree:
         map:
           odom:
-            base_link:
-              camera_link:
-                camera_depth_optical_frame:
+            base_footprint:
+              base_link:
+                caster_frontal_wheel:
                   {}
-              caster1:
-                {}
-              caster2:
-                {}
-              caster3:
-                {}
-              left_wheel:
-                {}
-              lidar_link:
-                {}
-              ray_link1:
-                {}
-              ray_link2:
-                {}
-              ray_link3:
-                {}
-              ray_link4:
-                {}
-              ray_link5:
-                {}
-              ray_link6:
-                {}
-              ray_link7:
-                {}
-              ray_link8:
-                {}
-              ray_link9:
-                {}
-              right_wheel:
-                {}
+                caster_rear_wheel:
+                  {}
+                imu_link:
+                  {}
+                left_wheel:
+                  {}
+                lidar_link:
+                  {}
+                right_wheel:
+                  {}
       Update Interval: 0
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
+        Max Value: 0.15000000596046448
+        Min Value: 0.15000000596046448
         Value: true
       Axis: Z
       Channel Name: intensity
       Class: rviz_default_plugins/LaserScan
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: AxisColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 0
+      Max Intensity: 240
       Min Color: 0; 0; 0
-      Min Intensity: 0
+      Min Intensity: 218
       Name: LaserScan
       Position Transformer: XYZ
       Selectable: true
@@ -508,57 +468,6 @@ Visualization Manager:
           Value: true
       Enabled: true
       Name: Controller
-    - Class: rviz_common/Group
-      Displays:
-        - Class: rviz_default_plugins/Image
-          Enabled: true
-          Max Value: 1
-          Median window: 5
-          Min Value: 0
-          Name: RealsenseCamera
-          Normalize Range: true
-          Topic:
-            Depth: 5
-            Durability Policy: Volatile
-            History Policy: Keep Last
-            Reliability Policy: Reliable
-            Value: /intel_realsense_r200_depth/image_raw
-          Value: true
-        - Alpha: 1
-          Autocompute Intensity Bounds: true
-          Autocompute Value Bounds:
-            Max Value: 10
-            Min Value: -10
-            Value: true
-          Axis: Z
-          Channel Name: intensity
-          Class: rviz_default_plugins/PointCloud2
-          Color: 255; 255; 255
-          Color Transformer: RGB8
-          Decay Time: 0
-          Enabled: true
-          Invert Rainbow: false
-          Max Color: 255; 255; 255
-          Max Intensity: 4096
-          Min Color: 0; 0; 0
-          Min Intensity: 0
-          Name: RealsenseDepthImage
-          Position Transformer: XYZ
-          Selectable: true
-          Size (Pixels): 3
-          Size (m): 0.009999999776482582
-          Style: Flat Squares
-          Topic:
-            Depth: 5
-            Durability Policy: Volatile
-            History Policy: Keep Last
-            Reliability Policy: Reliable
-            Value: /intel_realsense_r200_depth/points
-          Use Fixed Frame: true
-          Use rainbow: true
-          Value: true
-      Enabled: false
-      Name: Realsense
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: MarkerArray
@@ -570,19 +479,6 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /waypoints
-      Value: true
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
-      Name: SLAM Graph
-      Namespaces:
-        slam_toolbox: true
-        slam_toolbox_edges: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /slam_toolbox/graph_visualization
       Value: true
   Enabled: true
   Global Options:
@@ -631,11 +527,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 124.34874725341797
+      Scale: 206.23289489746094
       Target Frame: base_link
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 1.608527421951294
-      Y: -0.9893189072608948
+      X: -0.5952141880989075
+      Y: 0.34255334734916687
     Saved: ~
 Window Geometry:
   Displays:
@@ -647,9 +543,7 @@ Window Geometry:
   Hide Right Dock: true
   Navigation 2:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000002400000051dfc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b200fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000100044006900730070006c0061007900730100000070000001c90000018600fffffffb00000018004e0061007600690067006100740069006f006e002000320100000245000003480000034800fffffffb0000001e005200650061006c00730065006e0073006500430061006d00650072006100000002c6000000c10000002800ffffff00000001000001e00000051dfc0200000005fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000070000001380000013800fffffffb0000000e0044006f0063006b0069006e006700000001b4000002650000026500fffffffb0000001000530065006c006500630074006f00720000000425000001680000016800fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000003fe0000051d00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
-  RealsenseCamera:
-    collapsed: false
+  QMainWindow State: 000000ff00000000fd0000000400000000000002400000051dfc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b200fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000100044006900730070006c0061007900730100000070000001c90000018600fffffffb00000018004e0061007600690067006100740069006f006e002000320100000245000003480000032200fffffffb0000001e005200650061006c00730065006e0073006500430061006d00650072006100000002c6000000c1000000000000000000000001000001e00000051dfc0200000005fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000070000001380000013800fffffffb0000000e0044006f0063006b0069006e006700000001b4000002650000026500fffffffb0000001000530065006c006500630074006f00720000000425000001680000016800fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000003fe0000051d00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Selector:
@@ -659,5 +553,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1610
-  X: 2419
-  Y: 502
+  X: 3550
+  Y: 241
