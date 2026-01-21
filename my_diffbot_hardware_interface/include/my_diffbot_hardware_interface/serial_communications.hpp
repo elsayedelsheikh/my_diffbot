@@ -130,8 +130,8 @@ public:
     left_remainder_ = l_raw - l_cmd;
     right_remainder_ = r_raw - r_cmd;
 
-    // 4. Let's add (10.0 rad/sec) in case of rotation
-    int offset = 10;
+    // 4. Let's add offset  in case of rotation
+    int offset = 13;
     if ((l_cmd<0) != (r_cmd<0)) {
 	l_cmd += (l_cmd >0) ? offset: -offset;
 	r_cmd += (r_cmd >0) ? offset: -offset;
