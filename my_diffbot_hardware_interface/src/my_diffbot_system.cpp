@@ -185,12 +185,12 @@ My_diffbotSystemHardware::read(
   // Read Ultrasonic data & convert it to meters
   int ultrasonic_data = 0;
   serial_comms_.read_ultrasonic_value(ultrasonic_data);
-  double ultrasonic_range = ultrasonic_data / 100.0;
+  ultrasonic_range_= ultrasonic_data / 100.0;
 
   for (const auto &[name, descr] : sensor_state_interfaces_) {
     if (descr.get_interface_name() == "range") {
-      set_state(name, ultrasonic_range);
-      RCLCPP_DEBUG(get_logger(), "Ultrasonic range: %.2f m", ultrasonic_range);
+      set_state(name, ultrasonic_range_);
+      RCLCPP_DEBUG(get_logger(), "Ultrasonic range: %.2f m", ultrasonic_range_);
     }
   }
 
