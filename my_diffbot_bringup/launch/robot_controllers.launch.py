@@ -118,16 +118,19 @@ def generate_launch_description():
     range_sensor_broadcaster_spawner = Node(
         package='controller_manager',
         executable='spawner',
-        arguments=['my_range_sensor_broadcaster'],
+        arguments=[
+            'my_range_sensor_broadcaster',
+            '--controller-ros-args',
+            '-r /my_range_sensor_broadcaster/range:=/ultrasonic_range',
+        ],
         parameters=[{'use_sim_time': use_sim_time}],
     )
+
     robot_controller_spawner = Node(
         package='controller_manager',
         executable='spawner',
         arguments=[
             'my_diffbot_base_controller',
-            '--param-file',
-            robot_controllers_config,
             '--controller-ros-args',
             '-r /my_diffbot_base_controller/cmd_vel:=/cmd_vel',
         ],
