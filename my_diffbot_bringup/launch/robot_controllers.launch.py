@@ -115,7 +115,7 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
-    range_broadcasters_spawner = Node(
+    range_sensor_broadcaster_spawner = Node(
         package='controller_manager',
         executable='spawner',
         arguments=['my_range_sensor_broadcaster'],
@@ -148,7 +148,7 @@ def generate_launch_description():
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
-        range_broadcasters_spawner,
+        range_sensor_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
     ]
 
