@@ -72,10 +72,10 @@ services:
     user: ${USERNAME:-devuser}
     command: sleep infinity
 
-  build:
+  build-ws:
     extends: dev
     command: colcon build --symlink-install
-  build-no-cache:
+  build-ws-no-cache:
     extends: dev
     command: rm -rf .colcon/build/* .colcon/install/* .colcon/log/* ;colcon build --symlink-install
   bringup-robot:

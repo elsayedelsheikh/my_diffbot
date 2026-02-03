@@ -190,7 +190,7 @@ My_diffbotSystemHardware::read(
   for (const auto &[name, descr] : sensor_state_interfaces_) {
     if (descr.get_interface_name() == "range") {
       set_state(name, ultrasonic_range_);
-      RCLCPP_INFO(get_logger(), "Ultrasonic range: %.2f m", ultrasonic_range_);
+      RCLCPP_DEBUG(get_logger(), "Sensor '%s' range: %.2f m", descr.get_prefix_name().c_str(), ultrasonic_range_);
     }
   }
 
