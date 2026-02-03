@@ -40,6 +40,9 @@
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
+      <sensor name="ultrasonic_sensor">
+        <state_interface name="range"/>
+      </sensor>
     </ros2_control>
   </xacro:macro>
 

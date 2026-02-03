@@ -72,6 +72,10 @@ services:
     user: ${USERNAME:-devuser}
     command: sleep infinity
 
+  build-ws:
+    extends: dev
+    command: colcon build --symlink-install
+
   bringup-robot:
     extends: dev
     command: ros2 launch my_diffbot_bringup bringup_robot.launch.py

@@ -4,6 +4,9 @@
  * Author: Sayed ElSheikh
  */
 #include "my_diffbot_hardware_interface/my_diffbot_system.hpp"
+#include <hardware_interface/hardware_component_interface.hpp>
+#include <hardware_interface/hardware_info.hpp>
+#include <rclcpp/logging.hpp>
 
 namespace my_diffbot_hardware_interface
 {
@@ -24,6 +27,9 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_configure(
   }
   for (const auto &[name, descr] : joint_command_interfaces_) {
     set_command(name, 0.0);
+  }
+  for (const auto &[name, descr] : sensor_state_interfaces_) {
+    set_state(name, 0.0);
   }
 
   // Connect to the robot
@@ -142,6 +148,24 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_init(
     }
   }
 
+
+  for (const hardware_interface::ComponentInfo & sensor: info_.sensors) {
+    if (sensor.state_interfaces.size() != 1) {
+      RCLCPP_FATAL(get_logger(),
+          "Sensor '%s' has %zu state interfaces; 1 expected.",
+          sensor.name.c_str(), sensor.state_interfaces.size());
+      return hardware_interface::CallbackReturn::ERROR;
+    }
+
+    if (sensor.state_interfaces[0].name != "range") {
+      RCLCPP_FATAL(get_logger(),
+          "Sensor '%s' has '%s' state interface; 'range' expected.",
+          sensor.name.c_str(),
+          sensor.state_interfaces[0].name.c_str());
+      return hardware_interface::CallbackReturn::ERROR;
+    }
+  }
+
   // Configure serial communications
   serial_comms_.configure(serial_port, baud_rate, timeout_ms, encoder_resolution);
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -157,6 +181,17 @@ My_diffbotSystemHardware::read(
       get_logger(),
       "Cannot read from serial; not connected to the robot!");
     return hardware_interface::return_type::ERROR;
+  }
+  // Read Ultrasonic data & convert it to meters
+  int ultrasonic_data = 0;
+  serial_comms_.read_ultrasonic_value(ultrasonic_data);
+  ultrasonic_range_= ultrasonic_data / 100.0;
+
+  for (const auto &[name, descr] : sensor_state_interfaces_) {
+    if (descr.get_interface_name() == "range") {
+      set_state(name, ultrasonic_range_);
+      RCLCPP_DEBUG(get_logger(), "Sensor '%s' range: %.2f m", descr.get_prefix_name().c_str(), ultrasonic_range_);
+    }
   }
 
   // Read encoder values from hardware

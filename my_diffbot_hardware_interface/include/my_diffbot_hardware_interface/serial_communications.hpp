@@ -133,8 +133,8 @@ public:
     // 4. Let's add offset  in case of rotation
     int offset = 13;
     if ((l_cmd<0) != (r_cmd<0)) {
-	l_cmd += (l_cmd >0) ? offset: -offset;
-	r_cmd += (r_cmd >0) ? offset: -offset;
+      l_cmd += (l_cmd >0) ? offset: -offset;
+      r_cmd += (r_cmd >0) ? offset: -offset;
     }
     set_motor_values(l_cmd, r_cmd);
   }
@@ -160,6 +160,18 @@ public:
 
     leftMotorEncoder = std::atol(token_1.c_str());
     rightMotorEncoder = std::atol(token_2.c_str());
+  }
+
+  /// @brief Read ultrasonic reading in cm
+  ///
+  /// Sends the "p\r" command to the MCU
+  ///
+  /// @param data Reference to variable that will be updated with ultrasonic reading
+  void read_ultrasonic_value(int & data)
+  {
+    std::string response = "";
+    send_command("p\r", &response);
+    data = std::atoi(response.c_str());
   }
 
   /// @brief Convert encoder counts to radians
