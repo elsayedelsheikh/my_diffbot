@@ -41,9 +41,10 @@ my_diffbot_base_controller:
     linear.x.max_acceleration: 1.0
     angular.z.max_acceleration: 2.0
 
-range_sensor_broadcaster:
+my_range_sensor_broadcaster:
   ros__parameters:
     type: range_sensor_broadcaster/RangeSensorBroadcaster
+
     sensor_name: 'ultrasonic_sensor'
     frame_id: 'ultrasonic_link'
     field_of_view: 0.52

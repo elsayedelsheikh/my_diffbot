@@ -118,7 +118,7 @@ def generate_launch_description():
     range_broadcasters_spawner = Node(
         package='controller_manager',
         executable='spawner',
-        arguments=['range_sensor_broadcaster'],
+        arguments=['my_range_sensor_broadcaster'],
         parameters=[{'use_sim_time': use_sim_time}],
     )
     robot_controller_spawner = Node(
