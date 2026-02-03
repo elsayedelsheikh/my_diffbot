@@ -75,9 +75,7 @@ services:
   build-ws:
     extends: dev
     command: colcon build --symlink-install
-  build-ws-no-cache:
-    extends: dev
-    command: rm -rf .colcon/build/* .colcon/install/* .colcon/log/* ;colcon build --symlink-install
+
   bringup-robot:
     extends: dev
     command: ros2 launch my_diffbot_bringup bringup_robot.launch.py
