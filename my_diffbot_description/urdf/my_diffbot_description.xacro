@@ -69,11 +69,11 @@
     <!-- Ultrasonic -->
     <joint name="ultrasonic_joint" type="fixed">
       <parent link="${prefix}base_link"/>
-      <child link="${prefix}Ultrasonic_link"/>
+      <child link="${prefix}ultrasonic_link"/>
       <origin xyz="-0.12 0.0 0.0" rpy="0.0 0.0 -3.14"/>
     </joint>
 
-    <link name="${prefix}Ultrasonic_link">
+    <link name="${prefix}ultrasonic_link">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
