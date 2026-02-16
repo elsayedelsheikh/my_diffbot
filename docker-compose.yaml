@@ -68,8 +68,8 @@ services:
       - ./dependencies/bno055:/overlay_ws/src/bno055:rw
     environment:
         ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
-        RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
-    user: ${USERNAME:-devuser}
+        RMW_IMPLEMENTATION: rmw_fastrtps_cpp
+    user: root
     command: sleep infinity
 
   build-ws:
