@@ -100,6 +100,7 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_init(
   int32_t encoder_resolution =
     std::stoi(info_.hardware_parameters["encoder_counts_per_revolution"]);
   int32_t timeout_ms = std::stoi(info_.hardware_parameters["timeout_ms"]);
+  use_ultrasonic_ = (info_.hardware_parameters["use_ultrasonic"] == "true")
 
   // DiffBotSystem has exactly two states and one command interface on each
   // joint
@@ -184,7 +185,9 @@ My_diffbotSystemHardware::read(
   }
   // Read Ultrasonic data & convert it to meters
   int ultrasonic_data = 0;
-  serial_comms_.read_ultrasonic_value(ultrasonic_data);
+  if (use_ultrasonic_) {
+    serial_comms_.read_ultrasonic_value(ultrasonic_data);
+  }
   ultrasonic_range_= ultrasonic_data / 100.0;
 
   for (const auto &[name, descr] : sensor_state_interfaces_) {

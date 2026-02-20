@@ -9,7 +9,7 @@ def generate_launch_description():
     args_declare = [
         DeclareLaunchArgument(
             'serial_port',
-            default_value='/dev/lidar',
+            default_value='/dev/ttyTHS1',
             description='Specifying usb port to connected lidar',
         ),
         DeclareLaunchArgument(

@@ -19,8 +19,8 @@ def generate_launch_description():
     )
     declared_arguments.append(
         DeclareLaunchArgument(
-            'use_sensor_fusion',
-            default_value='true',
+            'use_imu',
+            default_value='false',
             choices=['true', 'false'],
         )
     )
@@ -47,7 +47,7 @@ def generate_launch_description():
     )
 
     # Launch configuration variables
-    use_sensor_fusion = LaunchConfiguration('use_sensor_fusion')
+    use_sensor_fusion = LaunchConfiguration('use_imu')
     use_sim_time = LaunchConfiguration('use_sim_time')
     mcu_serial_port = LaunchConfiguration('mcu_serial_port')
     mcu_baud_rate = LaunchConfiguration('mcu_baud_rate')
@@ -118,7 +118,8 @@ def generate_launch_description():
                     ]
                 )
             ]
-        )
+        ),
+        condition=IfCondition(use_sensor_fusion),
     )
 
     launch_files = [

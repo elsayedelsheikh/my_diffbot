@@ -28,7 +28,7 @@ my_diffbot_base_controller:
     twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
     position_feedback: true
     open_loop: false
-    enable_odom_tf: false
+    enable_odom_tf: true
     cmd_vel_timeout: 5.0
     publish_limited_velocity: true
     velocity_rolling_window_size: 15

@@ -70,6 +70,7 @@ private:
   int64_t left_encoder_prev_ = 0;
   int64_t right_encoder_prev_ = 0;
   double ultrasonic_range_ = 0.0;
+  bool use_ultrasonic_ = false;
 };
 
 }  // namespace my_diffbot_hardware_interface

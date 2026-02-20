@@ -76,26 +76,27 @@ services:
     extends: dev
     command: colcon build --symlink-install
 
-  bringup-robot:
+  robot-bringup:
     extends: dev
     command: ros2 launch my_diffbot_bringup bringup_robot.launch.py
+
+  start-navigation:
+    extends: dev
+    command: ros2 launch my_diffbot_navigation nav_bringup_launch.py
 
   teleop-keyboard:
     extends: dev
     command: ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p stamped:=true
 
-  bringup-controllers:
+  test-controllers:
     extends: dev
     command: ros2 launch my_diffbot_bringup robot_controllers.launch.py
 
-  bringup-lidar:
+  test-lidar:
     extends: dev
     command: ros2 launch my_diffbot_bringup lidar_bringup.launch.py
 
-  bringup-imu:
+  test-imu:
     extends: dev
     command: ros2 launch my_diffbot_bringup imu_bno055.launch.py
 
-  start-navigation:
-    extends: dev
-    command: ros2 launch my_diffbot_navigation nav_bringup_launch.py

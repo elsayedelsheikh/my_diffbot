@@ -4,6 +4,7 @@
   <xacro:arg name="prefix" default="" />
   <xacro:arg name="sim_gazebo" default="false" />
   <xacro:arg name="use_mock_hardware" default="false" />
+  <xacro:arg name="use_ultrasonic" default="false" />
   <xacro:arg name="serial_port" default="/dev/ttyUSB0" />
   <xacro:arg name="baud_rate" default="57600" />
   <xacro:arg name="encoder_counts_per_revolution" default="500" />
@@ -24,6 +25,7 @@
     <xacro:my_diffbot_ros2_control
     name="My_diffbot"
     mock_hardware="$(arg use_mock_hardware)"
+    use_ultrasonic="$(arg use_ultrasonic)"
     serial_port="$(arg serial_port)" baud_rate="$(arg baud_rate)"
     encoder_counts_per_revolution="$(arg encoder_counts_per_revolution)"
     timeout_ms="$(arg timeout_ms)"/>
