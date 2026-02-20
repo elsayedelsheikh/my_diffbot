@@ -54,7 +54,7 @@
     <joint name="lidar_joint" type="fixed">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}lidar_link"/>
-      <origin xyz="0.06 0.01 0.10" rpy="0.0 0.0 1.57"/>
+      <origin xyz="0.06 0.01 0.10" rpy="0.0 0.0 -1.57"/>
     </joint>
 
     <link name="${prefix}lidar_link">
