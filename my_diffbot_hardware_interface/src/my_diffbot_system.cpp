@@ -100,7 +100,7 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_init(
   int32_t encoder_resolution =
     std::stoi(info_.hardware_parameters["encoder_counts_per_revolution"]);
   int32_t timeout_ms = std::stoi(info_.hardware_parameters["timeout_ms"]);
-  use_ultrasonic_ = (info_.hardware_parameters["use_ultrasonic"] == "true")
+  use_ultrasonic_ = (info_.hardware_parameters["use_ultrasonic"] == "true");
 
   // DiffBotSystem has exactly two states and one command interface on each
   // joint
