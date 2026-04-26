@@ -25,6 +25,8 @@ RUN apt-get update \
       ros-${ROS_DISTRO}-diff-drive-controller \
       ros-${ROS_DISTRO}-joint-state-broadcaster \
       ros-${ROS_DISTRO}-robot-localization \
+      ros-${ROS_DISTRO}-navigation2 \
+      ros-${ROS_DISTRO}-nav2-bringup \
       ros-${ROS_DISTRO}-example-interfaces \
    # Clean up
    && apt-get autoremove -y \
@@ -42,8 +44,6 @@ RUN mkdir -p /base_ws/src
 WORKDIR /base_ws/src
 
 COPY dependencies.repos .
-
-#COPY dependencies.repos .
 RUN vcs import < dependencies.repos
 
 # Build the base Colcon workspace, installing dependencies first.

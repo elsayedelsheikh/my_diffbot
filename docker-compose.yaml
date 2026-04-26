@@ -57,15 +57,13 @@ services:
       - ./my_diffbot_description:/overlay_ws/src/my_diffbot_description:rw
       - ./my_diffbot_hardware_interface:/overlay_ws/src/my_diffbot_hardware_interface:rw
       - ./my_diffbot_localization:/overlay_ws/src/my_diffbot_localization:rw
-        #- ./my_diffbot_navigation:/overlay_ws/src/my_diffbot_navigation:rw
+      - ./my_diffbot_navigation:/overlay_ws/src/my_diffbot_navigation:rw
       # Mount colcon build artifacts for faster rebuilds
       - ./.colcon/build/:/overlay_ws/build/:rw
       - ./.colcon/install/:/overlay_ws/install/:rw
       - ./.colcon/log/:/overlay_ws/log/:rw
       # Mount Devices
       - /dev/lidar:/dev/lidar:rw
-      # IMU
-      #      - ./dependencies/bno055:/overlay_ws/src/bno055:rw
     environment:
         ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
         RMW_IMPLEMENTATION: rmw_fastrtps_cpp
