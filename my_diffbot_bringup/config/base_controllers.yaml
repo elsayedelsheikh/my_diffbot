@@ -32,7 +32,7 @@ my_diffbot_base_controller:
     cmd_vel_timeout: 5.0
     publish_limited_velocity: true
     velocity_rolling_window_size: 15
-    linear.x.max_velocity: 0.7
+    linear.x.max_velocity: 0.5
     angular.z.max_velocity: 1.5
     linear.x.max_acceleration: 1.0
     angular.z.max_acceleration: 2.0
