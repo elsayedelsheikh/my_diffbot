@@ -43,10 +43,8 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 RUN mkdir -p /base_ws/src
 WORKDIR /base_ws/src
 
-COPY dependencies .
-
-#COPY dependencies.repos .
-#RUN vcs import < dependencies.repos
+COPY dependencies.repos .
+RUN vcs import < dependencies.repos
 
 # Build the base Colcon workspace, installing dependencies first.
 WORKDIR /base_ws
@@ -74,7 +72,7 @@ COPY ./my_diffbot_bringup/ ./src/my_diffbot_bringup/
 COPY ./my_diffbot_description/ ./src/my_diffbot_description/
 COPY ./my_diffbot_hardware_interface/ ./src/my_diffbot_hardware_interface/
 COPY ./my_diffbot_localization/ ./src/my_diffbot_localization/
-COPY ./my_diffbot_navigation/ ./src/my_diffbot_navigation/
+#COPY ./my_diffbot_navigation/ ./src/my_diffbot_navigation/
 RUN source /base_ws/install/setup.bash \
  && apt-get update -y \
  && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -r -y \
