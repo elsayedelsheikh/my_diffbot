@@ -133,8 +133,6 @@ def generate_launch_description():
             'my_diffbot_base_controller',
             '--controller-ros-args',
             '-r /my_diffbot_base_controller/cmd_vel:=/cmd_vel',
-            '-p',
-            robot_controllers_config,
         ],
         parameters=[{'use_sim_time': use_sim_time}],
     )
