@@ -97,4 +97,3 @@ services:
   test-imu:
     extends: dev
     command: ros2 launch my_diffbot_bringup imu_bno055.launch.py
-
