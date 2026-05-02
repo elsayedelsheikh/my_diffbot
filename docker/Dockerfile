@@ -1,5 +1,5 @@
 # ROS distribution to use
-ARG ROS_DISTRO=jazzy
+ARG ROS_DISTRO=rolling
 
 ##############
 # Base Image #
@@ -18,16 +18,12 @@ RUN apt-get update \
       libserial-dev \
       ros-${ROS_DISTRO}-xacro \
       ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
-      ros-${ROS_DISTRO}-teleop-twist-keyboard  \
       ros-${ROS_DISTRO}-controller-manager \
       ros-${ROS_DISTRO}-ros2controlcli \
       ros-${ROS_DISTRO}-hardware-interface \
       ros-${ROS_DISTRO}-diff-drive-controller \
       ros-${ROS_DISTRO}-joint-state-broadcaster \
       ros-${ROS_DISTRO}-robot-localization \
-      ros-${ROS_DISTRO}-navigation2 \
-      ros-${ROS_DISTRO}-nav2-bringup \
-      ros-${ROS_DISTRO}-example-interfaces \
    # Clean up
    && apt-get autoremove -y \
    && apt-get clean -y \

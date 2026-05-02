@@ -19,7 +19,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile
       args:
-        ROS_DISTRO: kilted
+        ROS_DISTRO: rolling
       target: base
     # Interactive shell
     stdin_open: true
