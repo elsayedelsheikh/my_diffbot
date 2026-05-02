@@ -48,6 +48,7 @@ RUN vcs import < dependencies.repos
 WORKDIR /base_ws
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
  && apt-get update -y \
+ && apt-get full-upgrade -y \
  && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -r -y \
  && colcon build --symlink-install
 
@@ -73,7 +74,6 @@ COPY ./my_diffbot_localization/ ./src/my_diffbot_localization/
 #COPY ./my_diffbot_navigation/ ./src/my_diffbot_navigation/
 RUN source /base_ws/install/setup.bash \
  && apt-get update -y \
- && apt-get full-upgrade -y \
  && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -r -y \
  && colcon build --symlink-install
 
