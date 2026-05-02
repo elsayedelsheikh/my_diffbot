@@ -8,8 +8,8 @@ controller_manager:
     my_diffbot_base_controller:
       type: diff_drive_controller/DiffDriveController
 
-    my_range_sensor_broadcaster:
-      type: range_sensor_broadcaster/RangeSensorBroadcaster
+    # my_range_sensor_broadcaster:
+    #   type: range_sensor_broadcaster/RangeSensorBroadcaster
 
 my_diffbot_base_controller:
   ros__parameters:
@@ -37,11 +37,11 @@ my_diffbot_base_controller:
     linear.x.max_acceleration: 1.0
     angular.z.max_acceleration: 2.0
 
-my_range_sensor_broadcaster:
-  ros__parameters:
-    sensor_name: 'ultrasonic_sensor'
-    frame_id: 'ultrasonic_link'
-    field_of_view: 0.52
-    max_range: 4.0
-    min_range: 0.02
-    radiation_type: 0  # Ultrasonic
+# my_range_sensor_broadcaster:
+#   ros__parameters:
+#     sensor_name: 'ultrasonic_sensor'
+#     frame_id: 'ultrasonic_link'
+#     field_of_view: 0.52
+#     max_range: 4.0
+#     min_range: 0.02
+#     radiation_type: 0  # Ultrasonic
