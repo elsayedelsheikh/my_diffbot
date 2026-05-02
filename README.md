@@ -10,7 +10,6 @@ my_diffbot/
 ├── my_diffbot_description/        # URDF/Xacro robot model, meshes, RViz configs
 ├── my_diffbot_hardware_interface/ # ros2_control hardware interface (serial MCU)
 ├── my_diffbot_localization/       # EKF localization config (robot_localization)
-├── my_diffbot_navigation/         # Nav2 and SLAM launch files, parameter tuning
 ├── docker/                        # Dockerfile (base + overlay stages)
 ├── docker-compose.yaml            # Development container services
 ├── dependencies.repos             # External repos (ldlidar_stl_ros2, bno055)
@@ -88,18 +87,21 @@ ros2 launch my_diffbot_bringup bringup_robot.launch.py use_imu:=true
 
 ## Navigation and SLAM
 
+Navigation uses [nav2_bringup](https://github.com/ros-navigation/navigation2) directly — no custom nav package needed.
+
 ```bash
-ros2 launch my_diffbot_navigation nav_bringup_launch.py
+ros2 launch nav2_bringup bringup_launch.py \
+  slam:=True \
+  use_sim_time:=false \
+  use_keepout_zones:=False \
+  use_speed_zones:=False
 ```
 
-Key arguments:
+Visualize with RViz:
 
-| Argument | Default | Description |
-|---|---|---|
-| `use_sim_time` | `false` | Use simulation clock |
-| `use_rviz` | `false` | Launch RViz |
-
-The nav bringup includes SLAM Toolbox for simultaneous mapping and navigation.
+```bash
+rviz2 -d /home/sayed/Projects/nav2_ws/src/navigation2/nav2_bringup/rviz/nav2_default_view.rviz
+```
 
 ## Teleoperation
 
