@@ -1,20 +1,20 @@
-# my_diffbot
+# DiffBot
 
-A personal ROS 2 differential drive robot platform used to develop and test Nav2 (Navigation 2) features on ROS 2 Kilted. This is a hobby/research repo, not a product.
+A personal ROS 2 differential drive robot platform used to develop and test Nav2 (Navigation 2) features on ROS2 Rolling. This is a hobby/research repo, not a product.
 
 ## Repo Structure
 
 ```
 my_diffbot/
-├── my_diffbot_bringup/          # Launch files, controller configs, top-level bring-up
-├── my_diffbot_description/      # URDF/Xacro robot model, meshes, RViz configs
-├── my_diffbot_hardware_interface/ # ros2_control hardware interface (serial MCU + lidar)
-├── my_diffbot_localization/     # EKF localization config (robot_localization)
-├── my_diffbot_navigation/       # Nav2 and SLAM launch files, parameter tuning
-├── docker/                      # Dockerfile (base + overlay stages)
-├── docker-compose.yaml          # Development container services
-├── dependencies.repos           # External repos (ldlidar_stl_ros2, bno055)
-└── scripts/                     # udev rules and helper scripts
+├── my_diffbot_bringup/            # Launch files, controller configs, top-level bring-up
+├── my_diffbot_description/        # URDF/Xacro robot model, meshes, RViz configs
+├── my_diffbot_hardware_interface/ # ros2_control hardware interface (serial MCU)
+├── my_diffbot_localization/       # EKF localization config (robot_localization)
+├── my_diffbot_navigation/         # Nav2 and SLAM launch files, parameter tuning
+├── docker/                        # Dockerfile (base + overlay stages)
+├── docker-compose.yaml            # Development container services
+├── dependencies.repos             # External repos (ldlidar_stl_ros2, bno055)
+└── scripts/                       # udev rules and helper scripts
 ```
 
 ## Key Features
@@ -24,19 +24,16 @@ my_diffbot/
 - MCU over serial (`/dev/ttyUSB0`, 57600 baud) with quadrature encoders (500 counts/rev)
 - LD06 360° LIDAR, 8 m range — Jetson UART (`/dev/ttyTHS1`, 230400 baud)
 - BNO055 9-DOF IMU
-- Intel RealSense D435 RGB-D camera
-- 9× ultrasonic sensors (4 m range)
 
 **Software**
-- ROS 2 Kilted with ros2_control, robot_localization (EKF), Nav2, and SLAM Toolbox
+- ROS2 with ros2_control, robot_localization (EKF), Nav2, and SLAM Toolbox
 - Docker-based development workflow (base + overlay images)
 
-## Prerequisites
+## Supported Distros
 
-- ROS 2 Kilted desktop install
-- `colcon`, `rosdep`, `vcs-tool`
-- Docker + Docker Compose (for containerised workflow)
-- Hardware connected and udev rules applied (see below)
+- Jazzy
+- Kilted
+- Rolling
 
 ## Device Permissions
 
