@@ -29,7 +29,7 @@ my_diffbot_base_controller:
     position_feedback: true
     open_loop: false
     enable_odom_tf: true
-    cmd_vel_timeout: 5.0
+    cmd_vel_timeout: 0.5
     publish_limited_velocity: true
     velocity_rolling_window_size: 15
     linear.x.max_velocity: 0.5
