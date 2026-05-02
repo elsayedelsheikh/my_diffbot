@@ -115,16 +115,16 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
-    range_sensor_broadcaster_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        arguments=[
-            'my_range_sensor_broadcaster',
-            '--controller-ros-args',
-            '-r /my_range_sensor_broadcaster/range:=/ultrasonic_range',
-        ],
-        parameters=[{'use_sim_time': use_sim_time}],
-    )
+    # range_sensor_broadcaster_spawner = Node(
+    #     package='controller_manager',
+    #     executable='spawner',
+    #     arguments=[
+    #         'my_range_sensor_broadcaster',
+    #         '--controller-ros-args',
+    #         '-r /my_range_sensor_broadcaster/range:=/ultrasonic_range',
+    #     ],
+    #     parameters=[{'use_sim_time': use_sim_time}],
+    # )
 
     robot_controller_spawner = Node(
         package='controller_manager',
@@ -151,7 +151,7 @@ def generate_launch_description():
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
-        range_sensor_broadcaster_spawner,
+        # range_sensor_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
     ]
 
