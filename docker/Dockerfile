@@ -1,5 +1,5 @@
 # ROS distribution to use
-ARG ROS_DISTRO=rolling
+ARG ROS_DISTRO=jazzy
 
 ##############
 # Base Image #
@@ -24,8 +24,6 @@ RUN apt-get update \
       ros-${ROS_DISTRO}-diff-drive-controller \
       ros-${ROS_DISTRO}-joint-state-broadcaster \
       ros-${ROS_DISTRO}-robot-localization \
-      ros-${ROS_DISTRO}-rosidl-buffer \
-      ros-${ROS_DISTRO}-rosidl-buffer-backend \
    # Clean up
    && apt-get autoremove -y \
    && apt-get clean -y \
