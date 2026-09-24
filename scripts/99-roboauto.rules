@@ -1,0 +1,5 @@
+# RoboAuto ESP32-S3 base, native USB (TinyUSB CDC 303a:4001, product "RoboAuto")
+#
+# sudo cp scripts/99-roboauto.rules /etc/udev/rules.d/
+# sudo udevadm control --reload-rules && sudo udevadm trigger
+SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="4001", ATTRS{product}=="RoboAuto", GROUP="dialout", MODE="0660", SYMLINK+="roboauto"

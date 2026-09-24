@@ -1,6 +1,5 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
@@ -19,22 +18,15 @@ def generate_launch_description():
     )
     declared_arguments.append(
         DeclareLaunchArgument(
-            'use_imu',
-            default_value='false',
-            choices=['true', 'false'],
-        )
-    )
-    declared_arguments.append(
-        DeclareLaunchArgument(
             'mcu_serial_port',
-            default_value='/dev/ttyUSB0',
+            default_value='/dev/roboauto',
             description='Serial port for RoboAuto communication.',
         )
     )
     declared_arguments.append(
         DeclareLaunchArgument(
             'mcu_baud_rate',
-            default_value='57600',
+            default_value='115200',
             description='Baud rate for RoboAuto communication.',
         )
     )
@@ -47,7 +39,6 @@ def generate_launch_description():
     )
 
     # Launch configuration variables
-    use_sensor_fusion = LaunchConfiguration('use_imu')
     use_sim_time = LaunchConfiguration('use_sim_time')
     mcu_serial_port = LaunchConfiguration('mcu_serial_port')
     mcu_baud_rate = LaunchConfiguration('mcu_baud_rate')
@@ -90,43 +81,9 @@ def generate_launch_description():
         launch_arguments={'serial_port': lidar_serial_port}.items(),
     )
 
-    # Sensor fusion with robot_localization node
-    sensor_fusion_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare('my_diffbot_localization'),
-                        'launch',
-                        'my_diffbot_ekf_localization.launch.py',
-                    ]
-                )
-            ]
-        ),
-        condition=IfCondition(use_sensor_fusion),
-    )
-
-    # IMU BNO055
-    imu_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare('my_diffbot_bringup'),
-                        'launch',
-                        'imu_bno055.launch.py',
-                    ]
-                )
-            ]
-        ),
-        condition=IfCondition(use_sensor_fusion),
-    )
-
     launch_files = [
         robot_controllers_launch,
         lidar_launch,
-        imu_launch,
-        sensor_fusion_launch,
     ]
 
     return LaunchDescription(declared_arguments + launch_files)

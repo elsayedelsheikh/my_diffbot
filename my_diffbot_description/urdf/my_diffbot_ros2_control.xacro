@@ -1,14 +1,21 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+  <!-- RoboAuto ESP32-S3 base. PID gains are x1000 (1000 = 1.0). -->
   <xacro:macro name="my_diffbot_ros2_control" params="
     name
     mock_hardware:=false
-    use_ultrasonic:=false
-    serial_port:=/dev/ttyUSB0
-    baud_rate:=57600
-    encoder_counts_per_revolution:=500
-    timeout_ms:=500">
+    serial_port:=/dev/roboauto
+    baud_rate:=115200
+    encoder_counts_per_revolution:=515
+    timeout_ms:=20
+    kp_l:=1000
+    ki_l:=3000
+    kd_l:=0
+    kp_r:=1000
+    ki_r:=3000
+    kd_r:=0
+    cmd_timeout_ms:=250">
     <ros2_control name="${name}" type="system">
       <hardware>
         <xacro:if value="${mock_hardware}">
@@ -19,11 +26,17 @@
         </xacro:if>
         <xacro:unless value="${mock_hardware}">
           <plugin>my_diffbot_hardware_interface/My_diffbotSystemHardware</plugin>
-          <param name="use_ultrasonic">${use_ultrasonic}</param>
           <param name="serial_port">${serial_port}</param>
           <param name="baud_rate">${baud_rate}</param>
           <param name="encoder_counts_per_revolution">${encoder_counts_per_revolution}</param>
           <param name="timeout_ms">${timeout_ms}</param>
+          <param name="kp_l">${kp_l}</param>
+          <param name="ki_l">${ki_l}</param>
+          <param name="kd_l">${kd_l}</param>
+          <param name="kp_r">${kp_r}</param>
+          <param name="ki_r">${ki_r}</param>
+          <param name="kd_r">${kd_r}</param>
+          <param name="cmd_timeout_ms">${cmd_timeout_ms}</param>
         </xacro:unless>
       </hardware>
       <joint name="right_wheel_joint">
@@ -42,9 +55,51 @@
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
-      <sensor name="ultrasonic_sensor">
-        <state_interface name="range"/>
+      <sensor name="bno055_imu">
+        <state_interface name="orientation.x"/>
+        <state_interface name="orientation.y"/>
+        <state_interface name="orientation.z"/>
+        <state_interface name="orientation.w"/>
+        <state_interface name="angular_velocity.x"/>
+        <state_interface name="angular_velocity.y"/>
+        <state_interface name="angular_velocity.z"/>
+        <state_interface name="linear_acceleration.x"/>
+        <state_interface name="linear_acceleration.y"/>
+        <state_interface name="linear_acceleration.z"/>
       </sensor>
+      <gpio name="led">
+        <!-- led_mode 0 off, 1 solid, 2 blink, 3 alternate; colours are 0xRRGGBB. -->
+        <command_interface name="led_mode"/>
+        <command_interface name="led_color"/>
+        <command_interface name="led_color_alt"/>
+        <command_interface name="led_period_ms"/>
+        <!-- Mirrored from the commands in read(). -->
+        <state_interface name="led_mode">
+          <param name="initial_value">0</param>
+        </state_interface>
+        <state_interface name="led_color">
+          <param name="initial_value">0</param>
+        </state_interface>
+        <state_interface name="led_color_alt">
+          <param name="initial_value">0</param>
+        </state_interface>
+        <state_interface name="led_period_ms">
+          <param name="initial_value">0</param>
+        </state_interface>
+      </gpio>
+      <!-- Runtime tuning: values are re-sent to the MCU only when they change;
+           seeded from the kp_l/.../cmd_timeout_ms params. -->
+      <gpio name="roboauto_pid">
+        <command_interface name="kp_l"/>
+        <command_interface name="ki_l"/>
+        <command_interface name="kd_l"/>
+        <command_interface name="kp_r"/>
+        <command_interface name="ki_r"/>
+        <command_interface name="kd_r"/>
+      </gpio>
+      <gpio name="roboauto_watchdog">
+        <command_interface name="cmd_timeout_ms"/>
+      </gpio>
     </ros2_control>
   </xacro:macro>
 

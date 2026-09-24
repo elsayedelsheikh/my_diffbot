@@ -3,7 +3,7 @@
 <package format="3">
   <name>my_diffbot_hardware_interface</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>ros2_control system interface for my_diffbot on the RoboAuto ESP32-S3 base (binary serial protocol).</description>
   <maintainer email="elsayed.elsheikh97@gmail.com">sayed</maintainer>
   <license>TODO: License declaration</license>
 
@@ -12,13 +12,14 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>hardware_interface</depend>
+  <depend>diagnostic_msgs</depend>
   <depend>pluginlib</depend>
   <depend>libserial-dev</depend>
 
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>diff_drive_controller</exec_depend>
   <exec_depend>joint_state_broadcaster</exec_depend>
-  <exec_depend>range_sensor_broadcaster</exec_depend>
+  <exec_depend>gpio_controllers</exec_depend>
   <exec_depend>imu_sensor_broadcaster</exec_depend>
   <exec_depend>joint_state_publisher</exec_depend>
   <exec_depend>ros2controlcli</exec_depend>
@@ -27,6 +28,7 @@
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

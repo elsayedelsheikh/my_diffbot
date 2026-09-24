@@ -11,6 +11,7 @@ find_package(ament_cmake_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(hardware_interface REQUIRED)
+find_package(diagnostic_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 
 find_library(LIBSERIAL_LIBRARY
@@ -30,13 +31,19 @@ endif()
 
 set(library_name ${PROJECT_NAME})
 
-add_library(${library_name} SHARED src/my_diffbot_system.cpp)
+add_library(${library_name} SHARED
+  src/binary_protocol.cpp
+  src/serial_transport.cpp
+  src/roboauto_transport.cpp
+  src/my_diffbot_system.cpp
+)
 target_compile_features(${library_name} PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_include_directories(${library_name} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_link_libraries(${library_name} PUBLIC
   hardware_interface::hardware_interface
+  ${diagnostic_msgs_TARGETS}
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -69,6 +76,10 @@ if(BUILD_TESTING)
   # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_add_gtest(test_binary_protocol test/test_binary_protocol.cpp)
+  target_link_libraries(test_binary_protocol ${library_name})
 endif()
 
 # EXPORTS
@@ -82,6 +93,7 @@ ament_export_targets(
   export_${PROJECT_NAME}
 )
 ament_export_dependencies(
+  diagnostic_msgs
   hardware_interface
   pluginlib
   rclcpp

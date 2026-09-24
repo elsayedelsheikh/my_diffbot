@@ -13,7 +13,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
    && apt-get -y install --no-install-recommends \
       curl \
-      libi2c-dev \
       python3-pip \
       libserial-dev \
       ros-${ROS_DISTRO}-xacro \
@@ -23,14 +22,13 @@ RUN apt-get update \
       ros-${ROS_DISTRO}-hardware-interface \
       ros-${ROS_DISTRO}-diff-drive-controller \
       ros-${ROS_DISTRO}-joint-state-broadcaster \
+      ros-${ROS_DISTRO}-imu-sensor-broadcaster \
+      ros-${ROS_DISTRO}-gpio-controllers \
       ros-${ROS_DISTRO}-robot-localization \
    # Clean up
    && apt-get autoremove -y \
    && apt-get clean -y \
    && rm -rf /var/lib/apt/lists/*
-
-# For IMU node
-RUN python3 -m pip install smbus pyserial transforms3d --break-system-packages
 
 # Use Cyclone DDS as middleware
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
@@ -110,10 +108,8 @@ RUN groupadd --gid $GID $USERNAME \
 # Set the ownership of the overlay workspace to the new user
 RUN chown -R ${UID}:${GID} /overlay_ws/
 
-# Add user to dialout and i2c groups for device access
+# Add user to dialout for the RoboAuto and LIDAR serial ports
 RUN usermod -aG dialout ${USERNAME}
-#RUN groupadd -r i2c
-RUN usermod -aG i2c ${USERNAME}
 
 # Set up the entrypoint, including it in the .bashrc for interactive shells
 USER ${USERNAME}
