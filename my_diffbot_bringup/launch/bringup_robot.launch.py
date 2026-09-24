@@ -1,6 +1,5 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
@@ -15,14 +14,6 @@ def generate_launch_description():
             default_value='false',
             choices=['true', 'false'],
             description='Use simulation time',
-        )
-    )
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            'use_imu',
-            default_value='false',
-            choices=['true', 'false'],
-            description='Fuse the RoboAuto IMU with wheel odometry (robot_localization EKF).',
         )
     )
     declared_arguments.append(
@@ -48,7 +39,6 @@ def generate_launch_description():
     )
 
     # Launch configuration variables
-    use_sensor_fusion = LaunchConfiguration('use_imu')
     use_sim_time = LaunchConfiguration('use_sim_time')
     mcu_serial_port = LaunchConfiguration('mcu_serial_port')
     mcu_baud_rate = LaunchConfiguration('mcu_baud_rate')
@@ -91,7 +81,7 @@ def generate_launch_description():
         launch_arguments={'serial_port': lidar_serial_port}.items(),
     )
 
-    # Sensor fusion with robot_localization node
+    # EKF: fuses wheel odometry with the RoboAuto IMU into /odom and the odom TF
     sensor_fusion_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [
@@ -104,7 +94,6 @@ def generate_launch_description():
                 )
             ]
         ),
-        condition=IfCondition(use_sensor_fusion),
     )
 
     launch_files = [

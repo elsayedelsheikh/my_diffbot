@@ -71,19 +71,14 @@ Key arguments:
 | Argument | Default | Description |
 |---|---|---|
 | `use_sim_time` | `false` | Use simulation clock |
-| `use_imu` | `false` | Fuse the RoboAuto IMU into odometry (EKF) |
 | `mcu_serial_port` | `/dev/roboauto` | RoboAuto serial port |
 | `mcu_baud_rate` | `115200` | RoboAuto baud rate (ignored by the USB CDC link) |
 | `lidar_serial_port` | `/dev/ttyTHS1` | LIDAR serial port |
 
-The IMU is always published on `/imu/data` (`imu_broadcaster`); `use_imu` only adds the EKF.
-IMU calibration, temperature and staleness go to `/diagnostics`.
-
-Example with IMU fusion enabled:
-
-```bash
-ros2 launch my_diffbot_bringup bringup_robot.launch.py use_imu:=true
-```
+The IMU is published on `/imu/data` (`imu_broadcaster`), with calibration, temperature and
+staleness on `/diagnostics`. The EKF (`robot_localization`) always runs: it fuses
+`/my_diffbot_base_controller/odom` with `/imu/data`, publishes `/odom`, and owns the
+`odom -> base_footprint` TF (diff_drive's own TF is disabled).
 
 ## Navigation and SLAM
 
