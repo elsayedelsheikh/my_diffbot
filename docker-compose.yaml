@@ -62,8 +62,9 @@ services:
       - ./.colcon/build/:/overlay_ws/build/:rw
       - ./.colcon/install/:/overlay_ws/install/:rw
       - ./.colcon/log/:/overlay_ws/log/:rw
-      # Mount Devices
-      - /dev/lidar:/dev/lidar:rw
+      # Live /dev so udev symlinks (/dev/lidar, /dev/roboauto) survive a replug
+      # or an ESP32 reset; a bind of a missing symlink would create a directory.
+      - /dev:/dev:rw
     environment:
         ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
         RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
@@ -93,7 +94,3 @@ services:
   test-lidar:
     extends: dev
     command: ros2 launch my_diffbot_bringup lidar_bringup.launch.py
-
-  test-imu:
-    extends: dev
-    command: ros2 launch my_diffbot_bringup imu_bno055.launch.py
