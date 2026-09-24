@@ -41,14 +41,14 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             'serial_port',
-            default_value='/dev/ttyUSB0',
-            description='Serial port for the robot.',
+            default_value='/dev/roboauto',
+            description='Serial port of the RoboAuto base.',
         )
     )
     declared_arguments.append(
         DeclareLaunchArgument(
             'baud_rate',
-            default_value='57600',
+            default_value='115200',
             description='Baud rate for the serial communication with the robot.',
         )
     )
@@ -126,6 +126,25 @@ def generate_launch_description():
     #     parameters=[{'use_sim_time': use_sim_time}],
     # )
 
+    # IMU from the RoboAuto base, published where the EKF reads it.
+    imu_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            'imu_broadcaster',
+            '--controller-ros-args',
+            '-r /imu_broadcaster/imu:=/imu/data',
+        ],
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+
+    gpio_controller_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['led_controller', 'roboauto_tuning_controller'],
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+
     robot_controller_spawner = Node(
         package='controller_manager',
         executable='spawner',
@@ -155,6 +174,8 @@ def generate_launch_description():
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
+        imu_broadcaster_spawner,
+        gpio_controller_spawner,
         # range_sensor_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
     ]

@@ -22,19 +22,20 @@ def generate_launch_description():
             'use_imu',
             default_value='false',
             choices=['true', 'false'],
+            description='Fuse the RoboAuto IMU with wheel odometry (robot_localization EKF).',
         )
     )
     declared_arguments.append(
         DeclareLaunchArgument(
             'mcu_serial_port',
-            default_value='/dev/ttyUSB0',
+            default_value='/dev/roboauto',
             description='Serial port for RoboAuto communication.',
         )
     )
     declared_arguments.append(
         DeclareLaunchArgument(
             'mcu_baud_rate',
-            default_value='57600',
+            default_value='115200',
             description='Baud rate for RoboAuto communication.',
         )
     )
@@ -106,26 +107,9 @@ def generate_launch_description():
         condition=IfCondition(use_sensor_fusion),
     )
 
-    # IMU BNO055
-    imu_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare('my_diffbot_bringup'),
-                        'launch',
-                        'imu_bno055.launch.py',
-                    ]
-                )
-            ]
-        ),
-        condition=IfCondition(use_sensor_fusion),
-    )
-
     launch_files = [
         robot_controllers_launch,
         lidar_launch,
-        imu_launch,
         sensor_fusion_launch,
     ]
 
