@@ -77,7 +77,8 @@ public:
     uint64_t count{0};        ///< frames parsed since startup — staleness check
     double lin_acc[3]{};      ///< m/s²  (x, y, z)
     double ang_vel[3]{};      ///< rad/s (x, y, z)
-    double quat[4]{};         ///< unitless (w, x, y, z)
+    // Identity until the first frame: a zero quaternion would NaN the EKF for good.
+    double quat[4]{1.0, 0.0, 0.0, 0.0};  ///< unitless (w, x, y, z)
     int cal[4]{};             ///< sys, gyro, acc, mag (0–3)
     int temp_c{};             ///< °C
   };
