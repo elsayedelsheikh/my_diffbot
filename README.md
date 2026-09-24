@@ -8,11 +8,11 @@ A personal ROS 2 differential drive robot platform used to develop and test Nav2
 my_diffbot/
 ├── my_diffbot_bringup/            # Launch files, controller configs, top-level bring-up
 ├── my_diffbot_description/        # URDF/Xacro robot model, meshes, RViz configs
-├── my_diffbot_hardware_interface/ # ros2_control hardware interface (serial MCU)
+├── my_diffbot_hardware_interface/ # ros2_control hardware interface (RoboAuto ESP32-S3 base)
 ├── my_diffbot_localization/       # EKF localization config (robot_localization)
 ├── docker/                        # Dockerfile (base + overlay stages)
 ├── docker-compose.yaml            # Development container services
-├── dependencies.repos             # External repos (ldlidar_stl_ros2, bno055)
+├── dependencies.repos             # External repos (ldlidar_stl_ros2)
 └── scripts/                       # udev rules and helper scripts
 ```
 
@@ -20,9 +20,9 @@ my_diffbot/
 
 **Hardware**
 - Differential drive chassis — wheel radius 31 mm, wheel separation 160 mm
-- MCU over serial (`/dev/ttyUSB0`, 57600 baud) with quadrature encoders (500 counts/rev)
+- RoboAuto ESP32-S3 base over native USB (`/dev/roboauto`, binary protocol): L298N motor driver,
+  hall encoders (515 counts/rev), on-board PID, and a BNO055 9-DOF IMU fused on the MCU
 - LD06 360° LIDAR, 8 m range — Jetson UART (`/dev/ttyTHS1`, 230400 baud)
-- BNO055 9-DOF IMU
 
 **Software**
 - ROS2 with ros2_control, robot_localization (EKF), Nav2, and SLAM Toolbox
@@ -36,18 +36,15 @@ my_diffbot/
 
 ## Device Permissions
 
-Apply the udev rule for the LIDAR so its serial port gets a stable symlink:
+Apply the udev rules on the host so the LIDAR and the RoboAuto base get stable symlinks
+(`/dev/lidar`, `/dev/roboauto`):
 
 ```bash
-sudo cp scripts/97-ldlidar.rules /etc/udev/rules.d/
+sudo cp scripts/97-ldlidar.rules scripts/99-roboauto.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
-Or grant temporary access directly:
-
-```bash
-sudo chmod 666 /dev/ttyUSB0 /dev/ttyTHS1 /dev/i2c-1
-```
+The `dev` container mounts the live `/dev`, so the symlinks survive a replug or an ESP32 reset.
 
 ## Build
 
@@ -74,12 +71,15 @@ Key arguments:
 | Argument | Default | Description |
 |---|---|---|
 | `use_sim_time` | `false` | Use simulation clock |
-| `use_imu` | `false` | Enable BNO055 IMU |
-| `mcu_serial_port` | `/dev/ttyUSB0` | MCU serial port |
-| `mcu_baud_rate` | `57600` | MCU baud rate |
+| `use_imu` | `false` | Fuse the RoboAuto IMU into odometry (EKF) |
+| `mcu_serial_port` | `/dev/roboauto` | RoboAuto serial port |
+| `mcu_baud_rate` | `115200` | RoboAuto baud rate (ignored by the USB CDC link) |
 | `lidar_serial_port` | `/dev/ttyTHS1` | LIDAR serial port |
 
-Example with IMU enabled:
+The IMU is always published on `/imu/data` (`imu_broadcaster`); `use_imu` only adds the EKF.
+IMU calibration, temperature and staleness go to `/diagnostics`.
+
+Example with IMU fusion enabled:
 
 ```bash
 ros2 launch my_diffbot_bringup bringup_robot.launch.py use_imu:=true
@@ -102,6 +102,27 @@ Visualize with RViz:
 ```bash
 rviz2 -d /home/sayed/Projects/nav2_ws/src/navigation2/nav2_bringup/rviz/nav2_default_view.rviz
 ```
+
+## RoboAuto Base
+
+The hardware interface talks to the RoboAuto ESP32-S3 firmware over its binary
+serial protocol. PID gains (x1000) and the motor watchdog are URDF params,
+pushed on activation. Two gpio controllers are exposed at runtime:
+
+```bash
+# Onboard RGB LED: led_mode 0 off, 1 solid, 2 blink, 3 alternate; colours are 0xRRGGBB
+# (65280 = 0x00FF00: green, blinking every 500 ms)
+ros2 topic pub --once /led_controller/commands control_msgs/msg/DynamicInterfaceGroupValues \
+  "{interface_groups: [led], interface_values: [{interface_names: [led_mode, led_color, led_color_alt, led_period_ms], values: [2, 65280, 0, 500]}]}"
+
+# Live PID re-tune (kp=1.0, ki=3.0 per wheel); sent to the MCU only when a value changes
+ros2 topic pub --once /roboauto_tuning_controller/commands control_msgs/msg/DynamicInterfaceGroupValues \
+  "{interface_groups: [roboauto_pid], interface_values: [{interface_names: [kp_l, ki_l, kd_l, kp_r, ki_r, kd_r], values: [1000, 3000, 0, 1000, 3000, 0]}]}"
+```
+
+Wheel target/measured/firmware velocity (mrps) and PWM duty (‰) are registered
+with ros2_control introspection (`left_wheel.target_velocity`, `left_wheel.pwm`, …)
+for tuning plots.
 
 ## Teleoperation
 
@@ -136,4 +157,3 @@ docker compose run --rm overlay bash
 Managed via `dependencies.repos` and imported with `vcs`:
 
 - **ldlidar_stl_ros2** — LD06 driver (forked at `elsayedelsheikh/ldlidar_stl_ros2`)
-- **bno055** — BNO055 IMU driver (`flynneva/bno055`)
