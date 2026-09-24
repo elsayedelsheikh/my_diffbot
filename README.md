@@ -78,7 +78,8 @@ Key arguments:
 The IMU is published on `/imu/data` (`imu_broadcaster`), with calibration, temperature and
 staleness on `/diagnostics`. The EKF (`robot_localization`) always runs: it fuses
 `/my_diffbot_base_controller/odom` with `/imu/data`, publishes `/odom`, and owns the
-`odom -> base_footprint` TF (diff_drive's own TF is disabled).
+`odom -> base_footprint` TF (diff_drive's own TF is disabled). It is started by
+`robot_controllers.launch.py`, so it runs with the controllers on their own too.
 
 ## Navigation and SLAM
 

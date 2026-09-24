@@ -81,25 +81,9 @@ def generate_launch_description():
         launch_arguments={'serial_port': lidar_serial_port}.items(),
     )
 
-    # EKF: fuses wheel odometry with the RoboAuto IMU into /odom and the odom TF
-    sensor_fusion_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare('my_diffbot_localization'),
-                        'launch',
-                        'my_diffbot_ekf_localization.launch.py',
-                    ]
-                )
-            ]
-        ),
-    )
-
     launch_files = [
         robot_controllers_launch,
         lidar_launch,
-        sensor_fusion_launch,
     ]
 
     return LaunchDescription(declared_arguments + launch_files)

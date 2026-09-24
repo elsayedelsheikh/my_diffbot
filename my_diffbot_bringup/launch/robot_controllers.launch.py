@@ -1,6 +1,11 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, RegisterEventHandler
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    RegisterEventHandler,
+)
 from launch.event_handlers import OnProcessExit
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     Command,
     FindExecutable,
@@ -168,6 +173,21 @@ def generate_launch_description():
         )
     )
 
+    # EKF: the only publisher of /odom and odom -> base_footprint (diff_drive's TF is off)
+    ekf_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare('my_diffbot_localization'),
+                        'launch',
+                        'my_diffbot_ekf_localization.launch.py',
+                    ]
+                )
+            ]
+        ),
+    )
+
     nodes = [
         control_node,
         robot_state_pub_node,
@@ -176,6 +196,7 @@ def generate_launch_description():
         gpio_controller_spawner,
         # range_sensor_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
+        ekf_launch,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
