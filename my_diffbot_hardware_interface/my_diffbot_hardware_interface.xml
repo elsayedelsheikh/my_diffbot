@@ -3,7 +3,7 @@
          type="my_diffbot_hardware_interface::My_diffbotSystemHardware"
          base_class_type="hardware_interface::SystemInterface">
     <description>
-      The ros2_control DiffBot using a system hardware interface-type. It uses velocity command and position state interface. implementing a hardware interface for My_diffbot differential-drive mobile robot.
+      ros2_control system interface for my_diffbot on the RoboAuto ESP32-S3 base: wheel velocity commands, encoder position/velocity states, BNO055 IMU, RGB LED and PID tuning gpios.
     </description>
   </class>
 </library>
