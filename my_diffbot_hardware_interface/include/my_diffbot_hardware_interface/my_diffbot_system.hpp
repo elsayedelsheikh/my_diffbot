@@ -73,8 +73,8 @@ private:
   // Encoder ticks per wheel revolution; used by read() to convert ticks → rad.
   double cpr_ = 1.0;
   // PID gains (× 1000) forwarded to the MCU at activation via SetPIDGains().
-  int32_t kp_l_ = 1000, ki_l_ = 3000, kd_l_ = 0;
-  int32_t kp_r_ = 1000, ki_r_ = 3000, kd_r_ = 0;
+  int32_t kp_l_ = 1000, ki_l_ = 2000, kd_l_ = 0;
+  int32_t kp_r_ = 1000, ki_r_ = 2000, kd_r_ = 0;
   // Motor command watchdog timeout (ms) forwarded via SetCommandTimeout().
   uint16_t cmd_timeout_ms_ = 250;
   // Last values sent to the MCU via the roboauto_pid / roboauto_watchdog gpio

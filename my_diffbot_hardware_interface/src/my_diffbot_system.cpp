@@ -85,10 +85,10 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_init(
 
   cmd_timeout_ms_ = static_cast<uint16_t>(param_int("cmd_timeout_ms", 250));
   kp_l_ = param_int("kp_l", 1000);
-  ki_l_ = param_int("ki_l", 3000);
+  ki_l_ = param_int("ki_l", 2000);
   kd_l_ = param_int("kd_l", 0);
   kp_r_ = param_int("kp_r", 1000);
-  ki_r_ = param_int("ki_r", 3000);
+  ki_r_ = param_int("ki_r", 2000);
   kd_r_ = param_int("kd_r", 0);
 
   // Each wheel joint has one velocity command and position + velocity states.

@@ -111,9 +111,9 @@ pushed on activation. Two gpio controllers are exposed at runtime:
 ros2 topic pub --once /led_controller/commands control_msgs/msg/DynamicInterfaceGroupValues \
   "{interface_groups: [led], interface_values: [{interface_names: [led_mode, led_color, led_color_alt, led_period_ms], values: [2, 65280, 0, 500]}]}"
 
-# Live PID re-tune (kp=1.0, ki=3.0 per wheel); sent to the MCU only when a value changes
+# Live PID re-tune (kp=1.0, ki=2.0 per wheel); sent to the MCU only when a value changes
 ros2 topic pub --once /roboauto_tuning_controller/commands control_msgs/msg/DynamicInterfaceGroupValues \
-  "{interface_groups: [roboauto_pid], interface_values: [{interface_names: [kp_l, ki_l, kd_l, kp_r, ki_r, kd_r], values: [1000, 3000, 0, 1000, 3000, 0]}]}"
+  "{interface_groups: [roboauto_pid], interface_values: [{interface_names: [kp_l, ki_l, kd_l, kp_r, ki_r, kd_r], values: [1000, 2000, 0, 1000, 2000, 0]}]}"
 ```
 
 Wheel target/measured/firmware velocity (mrps) and PWM duty (‰) are registered
