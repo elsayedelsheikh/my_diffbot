@@ -41,10 +41,14 @@ my_diffbot_base_controller:
     cmd_vel_timeout: 5.0
     publish_limited_velocity: true
     velocity_rolling_window_size: 15
-    linear.x.max_velocity: 0.5
+    # The wheels top out near 0.44 m/s on the floor; the margin keeps the PID out of saturation.
+    linear.x.max_velocity: 0.35
     angular.z.max_velocity: 1.5
-    linear.x.max_acceleration: 1.0
+    # Ramped setpoints keep the wheel PID from winding up and overshooting on a step.
+    linear.x.max_acceleration: 0.5
+    linear.x.max_deceleration: -0.8
     angular.z.max_acceleration: 2.0
+    angular.z.max_deceleration: -3.0
 
 imu_broadcaster:
   ros__parameters:
