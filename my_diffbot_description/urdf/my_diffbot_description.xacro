@@ -84,11 +84,12 @@
       </visual>
     </link>
 
-    <!-- IMU: the firmware remap leaves /imu/data x pointing to the rear (accel while driving) -->
+    <!-- IMU: the firmware remap leaves /imu/data x pointing to the rear (accel while driving).
+         The board is pitched 5.9 deg (calibrated accel at rest; the lidar plane is level). -->
     <joint name="imu_joint" type="fixed">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}imu_link"/>
-      <origin xyz="0.04 0.0 0.045" rpy="0.0 0.0 ${PI}"/>
+      <origin xyz="0.04 0.0 0.045" rpy="0.0 -0.103 ${PI}"/>
     </joint>
 
     <link name="${prefix}imu_link">
