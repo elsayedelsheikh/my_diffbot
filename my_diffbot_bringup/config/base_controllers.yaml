@@ -37,12 +37,16 @@ my_diffbot_base_controller:
     base_frame_id: base_footprint
     pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
     twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
-    position_feedback: true
+    # Odom from the wheel velocity state (MCU-timed, already filtered): with position
+    # feedback, the ~50 Hz tick steps divided by the jittery 100 Hz host period
+    # over-read the twist by ~5 %, and the EKF integrates that twist.
+    position_feedback: false
     open_loop: false
     enable_odom_tf: false  # the EKF owns odom -> base_footprint
-    cmd_vel_timeout: 5.0
+    # Stop within half a second if the command stream dies (Nav2 publishes at 20 Hz).
+    cmd_vel_timeout: 0.5
     publish_limited_velocity: true
-    velocity_rolling_window_size: 15
+    velocity_rolling_window_size: 4
     # The wheels top out near 0.44 m/s on the floor; the margin keeps the PID out of saturation.
     linear.x.max_velocity: 0.35
     angular.z.max_velocity: 1.5
