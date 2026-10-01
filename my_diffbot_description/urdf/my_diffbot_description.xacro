@@ -15,34 +15,34 @@
   <xacro:property name="wheel_separation" value="0.255" />  <!-- wheel centre to centre -->
   <xacro:property name="caster_wheel_mass" value="0.1" /> <!-- arbitrary value for caster wheel mass -->
   <xacro:property name="caster_wheel_radius" value="0.015" />
-  <xacro:property name="z_offset" value="-${base_height/2}" /> <!-- Space btw top of beam and the each joint -->
+  <xacro:property name="chassis_z" value="0.03" /> <!-- chassis bottom above the axle -->
 
-  <!-- Base Link -->
+  <!-- Base Link: base_link is the axle centre, midway between the wheels -->
   <link name="base_footprint"/>
 
   <joint name="footprint_joint" type="fixed">
     <parent link="base_footprint"/>
     <child link="${prefix}base_link"/>
-    <origin xyz="0.0 0.0 0.05" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 ${wheel_radius}" rpy="0.0 0.0 0.0"/>
   </joint>
 
   <link name="${prefix}base_link">
     <collision>
-      <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+      <origin xyz="0 0 ${chassis_z + base_height/2}" rpy="0 0 0"/>
       <geometry>
         <cylinder radius="0.15" length="0.06"/>
       </geometry>
     </collision>
 
     <visual>
-      <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+      <origin xyz="0 0 ${chassis_z + base_height/2}" rpy="0 0 0"/>
       <geometry>
         <cylinder radius="0.15" length="0.06"/>
       </geometry>
     </visual>
 
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0 ${chassis_z + base_height/2}" rpy="0 0 0"/>
       <mass value="${base_mass}"/>
       <inertia
         ixx="${base_mass / 12.0 * (base_length*base_length + base_height*base_height)}" ixy="0.0" ixz="0.0"
@@ -51,11 +51,12 @@
       </inertial>
     </link>
 
-    <!-- LIDAR -->
+    <!-- LIDAR: x, y and yaw are the LD06 scan frame, fitted from scan matching over
+         straight drives and in-place turns (yaw -86.5 deg, not -90) -->
     <joint name="lidar_joint" type="fixed">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}lidar_link"/>
-      <origin xyz="0.10 -0.02 0.14" rpy="0.0 0.0 -1.57"/>
+      <origin xyz="0.110 -0.023 0.14" rpy="0.0 0.0 -1.510"/>
     </joint>
 
     <link name="${prefix}lidar_link">
@@ -71,7 +72,7 @@
     <joint name="ultrasonic_joint" type="fixed">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}ultrasonic_link"/>
-      <origin xyz="-0.12 0.0 0.0" rpy="0.0 0.0 -3.14"/>
+      <origin xyz="-0.12 0.0 ${chassis_z}" rpy="0.0 0.0 -3.14"/>
     </joint>
 
     <link name="${prefix}ultrasonic_link">
@@ -83,11 +84,11 @@
       </visual>
     </link>
 
-    <!-- IMU -->
+    <!-- IMU: the firmware remap leaves /imu/data x pointing to the rear (accel while driving) -->
     <joint name="imu_joint" type="fixed">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}imu_link"/>
-      <origin xyz="0.04 0.0 0.045" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.04 0.0 0.045" rpy="0.0 0.0 ${PI}"/>
     </joint>
 
     <link name="${prefix}imu_link">
@@ -103,7 +104,7 @@
     <joint name="${prefix}left_wheel_joint" type="continuous">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}left_wheel"/>
-      <origin xyz="0 -${wheel_separation/2} ${z_offset}" rpy="0 0 0"/>
+      <origin xyz="0 ${wheel_separation/2} 0" rpy="0 0 0"/>
       <axis xyz="0 1 0"/>
       <dynamics damping="0.2"/>
       <limit effort="100" velocity="40.0"/>
@@ -138,7 +139,7 @@
     <joint name="${prefix}right_wheel_joint" type="continuous">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}right_wheel"/>
-      <origin xyz="0 ${wheel_separation/2} ${z_offset}" rpy="0 0 0"/>
+      <origin xyz="0 -${wheel_separation/2} 0" rpy="0 0 0"/>
       <axis xyz="0 1 0"/>
       <dynamics damping="0.2"/>
       <limit effort="100" velocity="40.0"/>
@@ -173,7 +174,7 @@
     <joint name="${prefix}caster_frontal_wheel_joint" type="fixed">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}caster_frontal_wheel"/>
-      <origin xyz="${base_width/2 - caster_wheel_radius} 0 ${z_offset}" rpy="0 0 0"/>
+      <origin xyz="${base_width/2 - caster_wheel_radius} 0 ${caster_wheel_radius - wheel_radius}" rpy="0 0 0"/>
     </joint>
 
     <!-- caster frontal wheel Link -->
@@ -205,7 +206,7 @@
     <joint name="${prefix}caster_rear_wheel_joint" type="fixed">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}caster_rear_wheel"/>
-      <origin xyz="${-base_width/2 + caster_wheel_radius} 0 ${z_offset}" rpy="0 0 0"/>
+      <origin xyz="${-base_width/2 + caster_wheel_radius} 0 ${caster_wheel_radius - wheel_radius}" rpy="0 0 0"/>
     </joint>
 
     <!-- caster rear wheel Link -->

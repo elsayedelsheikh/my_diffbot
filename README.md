@@ -19,7 +19,7 @@ my_diffbot/
 ## Key Features
 
 **Hardware**
-- Differential drive chassis — wheel radius 31 mm, wheel separation 160 mm
+- Differential drive chassis — wheel radius 30 mm, wheel separation 255 mm (centre to centre)
 - RoboAuto ESP32-S3 base over native USB (`/dev/roboauto`, binary protocol): L298N motor driver,
   hall encoders (515 counts/rev), on-board PID, and a BNO055 9-DOF IMU fused on the MCU
 - LD06 360° LIDAR, 8 m range — Jetson UART (`/dev/ttyTHS1`, 230400 baud)
