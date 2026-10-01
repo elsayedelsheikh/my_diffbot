@@ -8,28 +8,30 @@
     <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
       <left_joint>left_wheel_joint</left_joint>
       <right_joint>right_wheel_joint</right_joint>
-      <wheel_separation>0.21</wheel_separation>
-      <wheel_radius>0.08255</wheel_radius>
+      <!-- Geometry and limits mirror base_controllers.yaml -->
+      <wheel_separation>0.255</wheel_separation>
+      <wheel_radius>0.03</wheel_radius>
       <odom_publish_frequency>30</odom_publish_frequency>
-      <max_linear_acceleration>2</max_linear_acceleration>
-      <min_linear_acceleration>-2</min_linear_acceleration>
-      <max_angular_acceleration>3</max_angular_acceleration>
-      <min_angular_acceleration>-3</min_angular_acceleration>
-      <max_linear_velocity>0.5</max_linear_velocity>
-      <min_linear_velocity>-0.5</min_linear_velocity>
-      <max_angular_velocity>2.0</max_angular_velocity>
-      <min_angular_velocity>-2.0</min_angular_velocity>
+      <max_linear_acceleration>0.5</max_linear_acceleration>
+      <min_linear_acceleration>-0.8</min_linear_acceleration>
+      <max_angular_acceleration>2.0</max_angular_acceleration>
+      <min_angular_acceleration>-3.0</min_angular_acceleration>
+      <max_linear_velocity>0.35</max_linear_velocity>
+      <min_linear_velocity>-0.35</min_linear_velocity>
+      <max_angular_velocity>1.5</max_angular_velocity>
+      <min_angular_velocity>-1.5</min_angular_velocity>
       <topic>cmd_vel</topic>
       <odom_topic>odom</odom_topic>
       <tf_topic>tf</tf_topic>
       <frame_id>odom</frame_id>
-      <child_frame_id>base_link</child_frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
       <odom_publisher_tf>true</odom_publisher_tf>
     </plugin>
   </gazebo>
 
   <!-- LIDAR Sensor Plugin -->
   <gazebo reference="lidar_link">
+    <!-- LD06 -->
     <sensor name="lidar_sensor" type="gpu_lidar">
         <pose relative_to='lidar_link'>0 0 0 0 0 0</pose>
         <topic>scan</topic>
@@ -37,10 +39,10 @@
         <ray>
             <scan>
                 <horizontal>
-                    <samples>640</samples>
+                    <samples>455</samples>
                     <resolution>1</resolution>
-                    <min_angle>-1.396263</min_angle>
-                    <max_angle>1.396263</max_angle>
+                    <min_angle>0.0</min_angle>
+                    <max_angle>6.283185</max_angle>
                 </horizontal>
                 <vertical>
                     <samples>1</samples>
@@ -50,8 +52,8 @@
                 </vertical>
             </scan>
             <range>
-                <min>0.08</min>
-                <max>10.0</max>
+                <min>0.02</min>
+                <max>12.0</max>
                 <resolution>0.01</resolution>
             </range>
         </ray>
@@ -63,32 +65,15 @@
     </sensor>
   </gazebo>
 
-  <!-- Depth Camera Sensor Plugin -->
-  <gazebo reference="camera_link">
-    <sensor name="depth_camera" type="rgbd_camera">
-      <pose>0 0 0 0 0 0</pose>
-      <update_rate>30</update_rate>
-      <topic>camera</topic>
-      <camera>
-        <horizontal_fov>1.5184</horizontal_fov>
-        <image>
-          <width>640</width>
-          <height>480</height>
-          <format>R8G8B8</format>
-        </image>
-        <clip>
-          <near>0.1</near>
-          <far>10.0</far>
-        </clip>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.007</stddev>
-        </noise>
-      </camera>
-      <always_on>1</always_on>
+  <!-- BNO055 IMU (needs the world's gz-sim-imu-system) -->
+  <gazebo reference="imu_link">
+    <sensor name="bno055_imu" type="imu">
+      <pose relative_to="imu_link">0 0 0 0 0 0</pose>
+      <topic>imu/data</topic>
+      <update_rate>100</update_rate>
+      <always_on>true</always_on>
       <visualize>false</visualize>
-      <gz_frame_id>camera_depth_optical_frame</gz_frame_id>
+      <gz_frame_id>imu_link</gz_frame_id>
     </sensor>
   </gazebo>
 
