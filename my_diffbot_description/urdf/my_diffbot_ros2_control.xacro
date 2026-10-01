@@ -9,11 +9,11 @@
     baud_rate:=115200
     encoder_counts_per_revolution:=515
     timeout_ms:=20
-    kp_l:=1000
-    ki_l:=2000
+    kp_l:=1500
+    ki_l:=3000
     kd_l:=0
-    kp_r:=1000
-    ki_r:=2000
+    kp_r:=1500
+    ki_r:=3000
     kd_r:=0
     cmd_timeout_ms:=250">
     <ros2_control name="${name}" type="system">
