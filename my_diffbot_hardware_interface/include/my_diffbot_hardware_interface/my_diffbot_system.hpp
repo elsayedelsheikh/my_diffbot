@@ -91,12 +91,12 @@ private:
   bool ticks_init_ = false;
   int64_t left_encoder_prev_ = 0;
   int64_t right_encoder_prev_ = 0;
-  // Measured wheel speed: differentiate ticks over a >=40 ms host window
-  // (per-cycle diff is staircase-noisy and aliases against the ~50 Hz
-  // WHEEL_FEEDBACK stream), then EMA-filter.
+  // Measured wheel speed: differentiate ticks over >=40 ms of MCU frame time,
+  // then EMA-filter. Host cycle time would bias it: the ticks only advance per
+  // ~50 Hz WHEEL_FEEDBACK frame, whatever the jittery host period was.
   int64_t meas_left_prev_ = 0;
   int64_t meas_right_prev_ = 0;
-  double meas_window_sec_ = 0.0;
+  double meas_stamp_prev_ = 0.0;
   std::array<double, 2> meas_rad_ {};   // EMA-filtered speed [rad/s] (L, R)
 
   // Last 0x36 frame sent; resent on change and at 1 Hz since it has no ACK.

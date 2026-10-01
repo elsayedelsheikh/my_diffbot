@@ -64,6 +64,7 @@ public:
     int64_t right_ticks{0};
     double left_mrps{0.0};
     double right_mrps{0.0};
+    double stamp_sec{0.0};  // MCU send time of the last frame
   };
   WheelFeedbackSnapshot GetWheelFeedbackSnapshot() const;
 
@@ -113,6 +114,7 @@ private:
   int64_t left_encoder_ticks_{0};
   int64_t right_encoder_ticks_{0};
   uint64_t wheel_feedback_count_{0};
+  double wheel_feedback_stamp_sec_{0.0};
   // Firmware wheel speed, signed on parse (wire value is unsigned — direction
   // comes from the tick delta; a zero delta keeps the last known direction).
   double left_wheel_fw_mrps_{0.0};

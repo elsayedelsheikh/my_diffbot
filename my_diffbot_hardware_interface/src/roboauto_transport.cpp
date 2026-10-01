@@ -169,6 +169,8 @@ void RoboAuto::OnMessageReceived(uint8_t msg_id, const std::vector<uint8_t> & pa
           static_cast<double>(right_wheel_dir_) * static_cast<double>(p.right_wheel_mrps);
         left_encoder_ticks_ = p.left_encoder_ticks;
         right_encoder_ticks_ = p.right_encoder_ticks;
+        wheel_feedback_stamp_sec_ =
+          static_cast<double>(p.timestamp_sec) + static_cast<double>(p.timestamp_nsec) * 1e-9;
         ++wheel_feedback_count_;
         break;
       }
@@ -249,6 +251,7 @@ RoboAuto::WheelFeedbackSnapshot RoboAuto::GetWheelFeedbackSnapshot() const
   s.right_ticks = right_encoder_ticks_;
   s.left_mrps = left_wheel_fw_mrps_;
   s.right_mrps = right_wheel_fw_mrps_;
+  s.stamp_sec = wheel_feedback_stamp_sec_;
   return s;
 }
 

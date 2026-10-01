@@ -409,7 +409,7 @@ void My_diffbotSystemHardware::ReadImu(
   diag_array.status.push_back(status);
 }
 
-void My_diffbotSystemHardware::ReadWheels(const rclcpp::Duration & period)
+void My_diffbotSystemHardware::ReadWheels(const rclcpp::Duration & /* period */)
 {
   const auto feedback = roboauto_.GetWheelFeedbackSnapshot();
 
@@ -430,7 +430,7 @@ void My_diffbotSystemHardware::ReadWheels(const rclcpp::Duration & period)
     right_encoder_prev_ = feedback.right_ticks;
     meas_left_prev_ = feedback.left_ticks;
     meas_right_prev_ = feedback.right_ticks;
-    meas_window_sec_ = 0.0;
+    meas_stamp_prev_ = feedback.stamp_sec;
     ticks_init_ = true;
     return;
   }
@@ -440,21 +440,26 @@ void My_diffbotSystemHardware::ReadWheels(const rclcpp::Duration & period)
   left_encoder_prev_ = feedback.left_ticks;
   right_encoder_prev_ = feedback.right_ticks;
 
-  // Differentiate over a >=40 ms window, then EMA-filter: ticks only change when
-  // a WHEEL_FEEDBACK frame (~50 Hz) parses, so a per-cycle diff aliases
-  // (0 on frame-less cycles, 2x on double-frame cycles).
+  // Differentiate over >=40 ms of MCU frame time, then EMA-filter: ticks only
+  // change when a WHEEL_FEEDBACK frame (~50 Hz) parses, so a per-cycle diff
+  // aliases, and dividing by the jittery host period over-reads speed by ~5 %.
   constexpr double kMeasWindowSec = 0.04;
   constexpr double kMeasEmaAlpha = 0.4;
-  meas_window_sec_ += period.seconds();
-  if (meas_window_sec_ >= kMeasWindowSec) {
-    const double scale = 2.0 * M_PI / (cpr_ * meas_window_sec_);
+  const double window_sec = feedback.stamp_sec - meas_stamp_prev_;
+  if (window_sec < 0.0 || window_sec > 1.0) {
+    // MCU clock re-anchored (handshake) or a long gap: restart the window.
+    meas_left_prev_ = feedback.left_ticks;
+    meas_right_prev_ = feedback.right_ticks;
+    meas_stamp_prev_ = feedback.stamp_sec;
+  } else if (window_sec >= kMeasWindowSec) {
+    const double scale = 2.0 * M_PI / (cpr_ * window_sec);
     meas_rad_[0] += kMeasEmaAlpha *
       (static_cast<double>(feedback.left_ticks - meas_left_prev_) * scale - meas_rad_[0]);
     meas_rad_[1] += kMeasEmaAlpha *
       (static_cast<double>(feedback.right_ticks - meas_right_prev_) * scale - meas_rad_[1]);
     meas_left_prev_ = feedback.left_ticks;
     meas_right_prev_ = feedback.right_ticks;
-    meas_window_sec_ = 0.0;
+    meas_stamp_prev_ = feedback.stamp_sec;
   }
 
   for (const auto &[name, descr] : joint_state_interfaces_) {
