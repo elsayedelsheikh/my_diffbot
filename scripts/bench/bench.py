@@ -187,13 +187,13 @@ class Bench(Node):
         self.pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
         self.create_subscription(Odometry, '/odom', self.on_ekf, 50)
         self.create_subscription(
-            Odometry, '/my_diffbot_base_controller/odom', self.on_wheel, 50
+            Odometry, '/merlin_base_controller/odom', self.on_wheel, 50
         )
         self.create_subscription(Imu, '/imu/data', self.on_imu, sd)
         self.create_subscription(JointState, '/joint_states', self.on_js, 50)
         self.create_subscription(LaserScan, '/scan_raw', self.on_scan, sd)
         self.create_subscription(
-            TwistStamped, '/my_diffbot_base_controller/cmd_vel_out', self.on_cmd_out, 50
+            TwistStamped, '/merlin_base_controller/cmd_vel_out', self.on_cmd_out, 50
         )
         self.create_subscription(TFMessage, '/tf_static', self.on_tf_static, latched)
         self.create_subscription(
@@ -327,7 +327,7 @@ class Bench(Node):
         if not names:
             return
         if not hasattr(self, '_intro_idx') or self._intro_ver != m.names_version:
-            full = ['My_diffbot.' + n for n in INTRO]
+            full = ['Merlin.' + n for n in INTRO]
             try:
                 self._intro_idx = [names.index(n) for n in full]
                 self._intro_ver = m.names_version

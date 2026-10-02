@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="merlin_robot">
+  <!-- Arguments -->
+  <xacro:arg name="prefix" default="" />
+  <xacro:arg name="sim_gazebo" default="false" />
+  <xacro:arg name="use_mock_hardware" default="false" />
+  <xacro:arg name="serial_port" default="/dev/ttyACM0" />
+  <xacro:arg name="baud_rate" default="115200" />
+  <xacro:arg name="encoder_counts_per_revolution" default="515" />
+  <xacro:arg name="timeout_ms" default="20" />
+
+  <!-- Import merlin description -->
+  <xacro:include filename="$(find merlin_description)/urdf/merlin_description.xacro" />
+  <xacro:merlin prefix="$(arg prefix)" />
+
+  <!-- Import Gz sim materials and plugins -->
+  <xacro:if value="$(arg sim_gazebo)">
+    <xacro:include filename="$(find merlin_description)/urdf/merlin_gz_sim.xacro" />
+  </xacro:if>
+
+  <!-- Import merlin ros2_control if (sim_gazebo == false) -->
+  <xacro:unless value="$(arg sim_gazebo)">
+    <xacro:include filename="$(find merlin_description)/urdf/merlin_ros2_control.xacro" />
+    <xacro:merlin_ros2_control
+    name="Merlin"
+    mock_hardware="$(arg use_mock_hardware)"
+    serial_port="$(arg serial_port)" baud_rate="$(arg baud_rate)"
+    encoder_counts_per_revolution="$(arg encoder_counts_per_revolution)"
+    timeout_ms="$(arg timeout_ms)"/>
+  </xacro:unless>
+
+</robot>

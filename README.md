@@ -1,4 +1,4 @@
-# DiffBot
+# Merlin
 
 A personal ROS 2 differential drive robot platform used to develop and test Nav2 (Navigation 2) features on ROS2 Rolling. This is a hobby/research repo, not a product.
 
@@ -6,10 +6,10 @@ A personal ROS 2 differential drive robot platform used to develop and test Nav2
 
 ```
 my_diffbot/
-├── my_diffbot_bringup/            # Launch files, controller configs, top-level bring-up
-├── my_diffbot_description/        # URDF/Xacro robot model, meshes, RViz configs
-├── my_diffbot_hardware_interface/ # ros2_control hardware interface (Kestrel ESP32-S3 base)
-├── my_diffbot_localization/       # EKF localization config (robot_localization)
+├── merlin_bringup/            # Launch files, controller configs, top-level bring-up
+├── merlin_description/        # URDF/Xacro robot model, meshes, RViz configs
+├── merlin_hardware_interface/ # ros2_control hardware interface (Kestrel ESP32-S3 base)
+├── merlin_localization/       # EKF localization config (robot_localization)
 ├── docker/                        # Dockerfile (base + overlay stages)
 ├── docker-compose.yaml            # Development container services
 ├── dependencies.repos             # External repos (ldlidar_stl_ros2)
@@ -75,7 +75,7 @@ source install/setup.bash
 ## Hardware Bringup
 
 ```bash
-ros2 launch my_diffbot_bringup bringup_robot.launch.py
+ros2 launch merlin_bringup bringup_robot.launch.py
 ```
 
 Key arguments:
@@ -89,7 +89,7 @@ Key arguments:
 
 The IMU is published on `/imu/data` (`imu_broadcaster`), with calibration, temperature and
 staleness on `/diagnostics`. The EKF (`robot_localization`) always runs: it fuses
-`/my_diffbot_base_controller/odom` with `/imu/data`, publishes `/odom`, and owns the
+`/merlin_base_controller/odom` with `/imu/data`, publishes `/odom`, and owns the
 `odom -> base_footprint` TF (diff_drive's own TF is disabled). It is started by
 `robot_controllers.launch.py`, so it runs with the controllers on their own too.
 
@@ -144,8 +144,8 @@ Two services are defined in `docker-compose.yaml`:
 
 | Service | Image | Purpose |
 |---|---|---|
-| `base` | `my_diffbot:base` | ROS 2 Kilted base layer |
-| `overlay` | `my_diffbot:overlay` | Workspace build on top of base |
+| `base` | `merlin:base` | ROS 2 Kilted base layer |
+| `overlay` | `merlin:overlay` | Workspace build on top of base |
 
 Build images:
 

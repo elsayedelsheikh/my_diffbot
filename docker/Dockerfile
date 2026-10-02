@@ -64,11 +64,11 @@ FROM base AS overlay
 # Create an overlay Colcon workspace
 RUN mkdir -p /overlay_ws/src
 WORKDIR /overlay_ws
-COPY ./my_diffbot_bringup/ ./src/my_diffbot_bringup/
-COPY ./my_diffbot_description/ ./src/my_diffbot_description/
-COPY ./my_diffbot_hardware_interface/ ./src/my_diffbot_hardware_interface/
-COPY ./my_diffbot_localization/ ./src/my_diffbot_localization/
-#COPY ./my_diffbot_navigation/ ./src/my_diffbot_navigation/
+COPY ./merlin_bringup/ ./src/merlin_bringup/
+COPY ./merlin_description/ ./src/merlin_description/
+COPY ./merlin_hardware_interface/ ./src/merlin_hardware_interface/
+COPY ./merlin_localization/ ./src/merlin_localization/
+#COPY ./merlin_navigation/ ./src/merlin_navigation/
 RUN source /base_ws/install/setup.bash \
  && apt-get update -y \
  && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -r -y \

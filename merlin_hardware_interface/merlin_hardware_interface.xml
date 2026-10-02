@@ -1,0 +1,9 @@
+<library path="merlin_hardware_interface">
+  <class name="merlin_hardware_interface/MerlinSystemHardware"
+         type="merlin_hardware_interface::MerlinSystemHardware"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      ros2_control system interface for merlin on the Kestrel ESP32-S3 base: wheel velocity commands, encoder position/velocity states, BNO055 IMU, RGB LED and PID tuning gpios.
+    </description>
+  </class>
+</library>

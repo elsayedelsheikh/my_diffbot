@@ -1,9 +1,0 @@
-<library path="my_diffbot_hardware_interface">
-  <class name="my_diffbot_hardware_interface/My_diffbotSystemHardware"
-         type="my_diffbot_hardware_interface::My_diffbotSystemHardware"
-         base_class_type="hardware_interface::SystemInterface">
-    <description>
-      ros2_control system interface for my_diffbot on the Kestrel ESP32-S3 base: wheel velocity commands, encoder position/velocity states, BNO055 IMU, RGB LED and PID tuning gpios.
-    </description>
-  </class>
-</library>

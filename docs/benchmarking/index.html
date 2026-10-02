@@ -226,11 +226,11 @@ ros2 topic list --no-daemon</code></pre>
   docker run --rm -it --init --network host --ipc host \
   --user "$(id -u):$(id -g)" -e HOME=/data \
   -e RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
-  -v "$HOME/kestrel_bench/manual:/data" my_diffbot:dev \
+  -v "$HOME/kestrel_bench/manual:/data" merlin:dev \
   bash -lc "source /opt/ros/jazzy/setup.bash && cd /data && \
   exec ros2 bag record -o $1 /cmd_vel \
-  /my_diffbot_base_controller/cmd_vel_out \
-  /my_diffbot_base_controller/odom /odom /imu/data \
+  /merlin_base_controller/cmd_vel_out \
+  /merlin_base_controller/odom /odom /imu/data \
   /joint_states /diagnostics \
   /controller_manager/introspection_data/full \
   /controller_manager/introspection_data/names \
@@ -246,7 +246,7 @@ rec kestrel_t1      # Ctrl-C when the test ends</code></pre>
   <div class="shead"><span class="num">P2</span><h2>PlotJuggler layout</h2><span class="meta">~15 min, once per base</span></div>
   <p class="why">Build one four-pane layout, save it, and reuse it for every test and every future MCU.</p>
   <div class="checklist">
-    <label class="chk"><input type="checkbox"><span><i>Streaming → ROS2 Topic Subscriber</i>. Select <code>/joint_states</code>, <code>/odom</code>, <code>/my_diffbot_base_controller/odom</code>, <code>/my_diffbot_base_controller/cmd_vel_out</code>, <code>/imu/data</code>, <code>/controller_manager/introspection_data/full</code>. Untick <i>use header.stamp</i> unless both clocks are chrony-synced.</span></label>
+    <label class="chk"><input type="checkbox"><span><i>Streaming → ROS2 Topic Subscriber</i>. Select <code>/joint_states</code>, <code>/odom</code>, <code>/merlin_base_controller/odom</code>, <code>/merlin_base_controller/cmd_vel_out</code>, <code>/imu/data</code>, <code>/controller_manager/introspection_data/full</code>. Untick <i>use header.stamp</i> unless both clocks are chrony-synced.</span></label>
     <label class="chk"><input type="checkbox"><span>Split into 4 panes (right-click → <i>Split horizontally</i>).</span></label>
     <label class="chk"><input type="checkbox"><span>Pane 1, <b>left wheel</b>: <code>left_wheel.target_velocity</code>, <code>.firmware_velocity</code>, <code>.measured_velocity</code> (mrps).</span></label>
     <label class="chk"><input type="checkbox"><span>Pane 2, <b>right wheel</b>: same three.</span></label>
@@ -471,8 +471,8 @@ pid 1500.0 3000.0</code></pre>
         <tr><td><code>*_wheel.firmware_velocity</code></td><td>mrps</td><td>The MCU's own speed, the one its PID closes on (100 ms tick window; sign added by the host). Tune against this.</td></tr>
         <tr><td><code>*_wheel.measured_velocity</code></td><td>mrps</td><td>Host speed (ticks over ≥ 40 ms of MCU time, EMA 0.4) = <code>/joint_states</code> velocity, which feeds odometry and the EKF. Judge odometry on this.</td></tr>
         <tr><td><code>*_wheel.pwm</code></td><td>‰</td><td>Motor duty, 1000 = 100 %.</td></tr>
-        <tr><td><code>/my_diffbot_base_controller/cmd_vel_out</code></td><td>m/s, rad/s</td><td>Body command after accel limits. Generic target for any MCU.</td></tr>
-        <tr><td><code>/my_diffbot_base_controller/odom</code></td><td></td><td>Wheel-only odometry.</td></tr>
+        <tr><td><code>/merlin_base_controller/cmd_vel_out</code></td><td>m/s, rad/s</td><td>Body command after accel limits. Generic target for any MCU.</td></tr>
+        <tr><td><code>/merlin_base_controller/odom</code></td><td></td><td>Wheel-only odometry.</td></tr>
         <tr><td><code>/odom</code></td><td></td><td>EKF (wheel twist + IMU yaw). What Nav2 and SLAM use.</td></tr>
       </tbody>
     </table></div>

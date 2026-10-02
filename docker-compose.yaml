@@ -14,7 +14,7 @@
 services:
   # Base image containing dependencies
   base:
-    image: my_diffbot:base
+    image: merlin:base
     build:
       context: .
       dockerfile: docker/Dockerfile
@@ -33,7 +33,7 @@ services:
   # Overlay image containing the example source code.
   overlay:
     extends: base
-    image: my_diffbot:overlay
+    image: merlin:overlay
     build:
       context: .
       dockerfile: docker/Dockerfile
@@ -42,7 +42,7 @@ services:
   # Developer container
   dev:
     extends: overlay
-    image: my_diffbot:dev
+    image: merlin:dev
     build:
       context: .
       dockerfile: docker/Dockerfile
@@ -53,11 +53,11 @@ services:
         - USERNAME=${USERNAME:-devuser}
     volumes:
       # Mount the source code
-      - ./my_diffbot_bringup:/overlay_ws/src/my_diffbot_bringup:rw
-      - ./my_diffbot_description:/overlay_ws/src/my_diffbot_description:rw
-      - ./my_diffbot_hardware_interface:/overlay_ws/src/my_diffbot_hardware_interface:rw
-      - ./my_diffbot_localization:/overlay_ws/src/my_diffbot_localization:rw
-      # - ./my_diffbot_navigation:/overlay_ws/src/my_diffbot_navigation:rw
+      - ./merlin_bringup:/overlay_ws/src/merlin_bringup:rw
+      - ./merlin_description:/overlay_ws/src/merlin_description:rw
+      - ./merlin_hardware_interface:/overlay_ws/src/merlin_hardware_interface:rw
+      - ./merlin_localization:/overlay_ws/src/merlin_localization:rw
+      # - ./merlin_navigation:/overlay_ws/src/merlin_navigation:rw
       # Mount colcon build artifacts for faster rebuilds
       - ./.colcon/build/:/overlay_ws/build/:rw
       - ./.colcon/install/:/overlay_ws/install/:rw
@@ -81,11 +81,11 @@ services:
   robot-bringup:
     extends: dev
     restart: unless-stopped          # preserves boot/restart behavior (with docker enabled)
-    command: ros2 launch my_diffbot_bringup bringup_robot.launch.py mcu_serial_port:=/dev/ttyACM0
+    command: ros2 launch merlin_bringup bringup_robot.launch.py mcu_serial_port:=/dev/ttyACM0
 
   start-navigation:
     extends: dev
-    command: ros2 launch my_diffbot_navigation nav_bringup_launch.py
+    command: ros2 launch merlin_navigation nav_bringup_launch.py
 
   teleop-keyboard:
     extends: dev
@@ -93,11 +93,11 @@ services:
 
   test-controllers:
     extends: dev
-    command: ros2 launch my_diffbot_bringup robot_controllers.launch.py
+    command: ros2 launch merlin_bringup robot_controllers.launch.py
 
   test-lidar:
     extends: dev
-    command: ros2 launch my_diffbot_bringup lidar_bringup.launch.py
+    command: ros2 launch merlin_bringup lidar_bringup.launch.py
 
   foxglove-visualize:
     extends: dev
