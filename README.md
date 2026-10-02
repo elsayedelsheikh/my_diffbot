@@ -46,6 +46,18 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 
 The `dev` container mounts the live `/dev`, so the symlinks survive a replug or an ESP32 reset.
 
+## WiFi Watchdog
+
+One failed WPA handshake makes NetworkManager block autoconnect for the WiFi profile (there is no
+secret agent on the headless Jetson). A timer re-activates it when `wlan0` sits disconnected with the
+network in range (override `WIFI_IFACE` / `WIFI_CON` in the service if needed):
+
+```bash
+sudo install -m 755 scripts/wifi-watchdog/wifi-watchdog.sh /usr/local/bin/wifi-watchdog
+sudo cp scripts/wifi-watchdog/wifi-watchdog.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now wifi-watchdog.timer
+```
+
 ## Build
 
 ```bash

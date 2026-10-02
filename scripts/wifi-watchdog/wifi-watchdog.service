@@ -1,0 +1,8 @@
+[Unit]
+Description=Re-activate the WiFi profile after NetworkManager gives up on it
+After=NetworkManager.service
+Requires=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/wifi-watchdog

@@ -1,0 +1,13 @@
+# sudo install -m 755 scripts/wifi-watchdog/wifi-watchdog.sh /usr/local/bin/wifi-watchdog
+# sudo cp scripts/wifi-watchdog/wifi-watchdog.{service,timer} /etc/systemd/system/
+# sudo systemctl daemon-reload && sudo systemctl enable --now wifi-watchdog.timer
+[Unit]
+Description=Check the WiFi link every 30 s
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=30
+AccuracySec=5
+
+[Install]
+WantedBy=timers.target
