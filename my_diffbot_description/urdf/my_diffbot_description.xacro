@@ -52,11 +52,12 @@
     </link>
 
     <!-- LIDAR: x, y and yaw are the LD06 scan frame, fitted from scan matching over
-         straight drives and in-place turns (yaw -86.5 deg, not -90) -->
+         straight drives and in-place turns (yaw -86.5 deg, not -90), then rotated 180 deg
+         about z when the base was reversed (old front is now the rear) -->
     <joint name="lidar_joint" type="fixed">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}lidar_link"/>
-      <origin xyz="0.110 -0.023 0.14" rpy="0.0 0.0 -1.510"/>
+      <origin xyz="-0.110 0.023 0.14" rpy="0.0 0.0 ${-1.510 + PI}"/>
     </joint>
 
     <link name="${prefix}lidar_link">
@@ -72,7 +73,7 @@
     <joint name="ultrasonic_joint" type="fixed">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}ultrasonic_link"/>
-      <origin xyz="-0.12 0.0 ${chassis_z}" rpy="0.0 0.0 -3.14"/>
+      <origin xyz="0.12 0.0 ${chassis_z}" rpy="0.0 0.0 0.0"/>
     </joint>
 
     <link name="${prefix}ultrasonic_link">
@@ -84,12 +85,13 @@
       </visual>
     </link>
 
-    <!-- IMU: the firmware remap leaves /imu/data x pointing to the rear (accel while driving).
+    <!-- IMU: the firmware remap leaves /imu/data x pointing to the old rear, which is the
+         front since the base was reversed (accel while driving).
          The board is pitched 5.9 deg (calibrated accel at rest; the lidar plane is level). -->
     <joint name="imu_joint" type="fixed">
       <parent link="${prefix}base_link"/>
       <child link="${prefix}imu_link"/>
-      <origin xyz="0.04 0.0 0.045" rpy="0.0 -0.103 ${PI}"/>
+      <origin xyz="-0.04 0.0 0.045" rpy="0.0 -0.103 0.0"/>
     </joint>
 
     <link name="${prefix}imu_link">
