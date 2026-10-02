@@ -98,3 +98,8 @@ services:
   test-lidar:
     extends: dev
     command: ros2 launch my_diffbot_bringup lidar_bringup.launch.py
+
+  foxglove-visualize:
+    extends: dev
+    command: ros2 launch foxglove_bridge foxglove_bridge_launch.xml
+

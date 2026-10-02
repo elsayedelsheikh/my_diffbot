@@ -16,6 +16,7 @@ RUN apt-get update \
       python3-pip \
       libserial-dev \
       ros-${ROS_DISTRO}-xacro \
+      ros-${ROS_DISTRO}-foxglove-bridge \
       ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
       ros-${ROS_DISTRO}-controller-manager \
       ros-${ROS_DISTRO}-ros2controlcli \
