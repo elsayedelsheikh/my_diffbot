@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 RoboLabs
+ * Copyright (c) 2026 Ultra
  *
  * Unit tests for binary_protocol: crc16_ccitt, BuildFrame, ExtractFrame,
  * AckStatus codes, Kestrel payload layouts, BNO055 scales and ResolveLed.
