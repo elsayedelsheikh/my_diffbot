@@ -9,6 +9,7 @@
 #include <atomic>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 #include "merlin_hardware_interface/serial_transport.hpp"
@@ -89,6 +90,9 @@ public:
   /// @brief Return true if IMU is healthy (Heartbeat system_status bit 1).
   bool GetImuHealthy() const {return imu_healthy_.load();}
 
+  /// @brief Last BATTERY_STATUS pack voltage [V]; NaN until the first frame.
+  double GetBatteryVoltage() const {return battery_voltage_v_;}
+
 private:
   // ── SerialTransport hooks ──────────────────────────────────────────────────
   void OnConfigure() override;
@@ -127,6 +131,8 @@ private:
   int32_t right_duty_permille_{0};
 
   IMUSnapshot imu_{};
+
+  double battery_voltage_v_{std::numeric_limits<double>::quiet_NaN()};
 
   // Heartbeat system_status bit1
   std::atomic<bool> imu_healthy_{false};

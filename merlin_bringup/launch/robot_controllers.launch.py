@@ -151,6 +151,13 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
+    battery_state_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['battery_state_broadcaster'],
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+
     gpio_controller_spawner = Node(
         package='controller_manager',
         executable='spawner',
@@ -202,6 +209,7 @@ def generate_launch_description():
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
         imu_broadcaster_spawner,
+        battery_state_broadcaster_spawner,
         gpio_controller_spawner,
         # range_sensor_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,

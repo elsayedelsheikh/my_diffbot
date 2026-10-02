@@ -67,6 +67,10 @@
         <state_interface name="linear_acceleration.y"/>
         <state_interface name="linear_acceleration.z"/>
       </sensor>
+      <!-- Jetson 2S Li-ion pack voltage; battery_state_broadcaster derives the rest. -->
+      <sensor name="battery_state">
+        <state_interface name="battery_voltage"/>
+      </sensor>
       <gpio name="led">
         <!-- led_mode 0 off, 1 solid, 2 blink, 3 alternate; colours are 0xRRGGBB. -->
         <command_interface name="led_mode"/>

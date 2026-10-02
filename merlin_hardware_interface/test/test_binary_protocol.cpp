@@ -25,6 +25,7 @@ using merlin_hardware_interface::kBno055AccScale;
 using merlin_hardware_interface::kBno055GyroScale;
 using merlin_hardware_interface::kBno055QuatScale;
 using merlin_hardware_interface::HeartbeatPayload;
+using merlin_hardware_interface::BatteryStatusPayload;
 using merlin_hardware_interface::RGBLEDSetPayload;
 using merlin_hardware_interface::crc16_ccitt;
 using merlin_hardware_interface::BuildFrame;
@@ -253,6 +254,12 @@ TEST(PayloadSizeTest, PidDebugPayloadSize)
   EXPECT_EQ(offsetof(PidDebugPayload, left_duty_permille), 8u);
   EXPECT_EQ(offsetof(PidDebugPayload, left_encoder_ticks), 32u);
   EXPECT_EQ(offsetof(PidDebugPayload, status), 48u);
+}
+
+TEST(PayloadSizeTest, BatteryStatusPayloadSize)
+{
+  static_assert(sizeof(BatteryStatusPayload) == 33, "BatteryStatusPayload must be 33 bytes");
+  EXPECT_EQ(offsetof(BatteryStatusPayload, voltage_cv), 8u);
 }
 
 TEST(PayloadWireLayoutTest, HandshakeProtocolVersionIsPackedSemver)

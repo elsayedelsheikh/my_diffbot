@@ -64,6 +64,7 @@ public:
 private:
   void ReadImu(bool publish_diag, diagnostic_msgs::msg::DiagnosticArray & diag_array);
   void ReadWheels(const rclcpp::Duration & period);
+  void ReadBattery();
   void WriteTuning();
   void WriteLed(const rclcpp::Time & time);
 

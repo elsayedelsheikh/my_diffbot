@@ -355,6 +355,7 @@ MerlinSystemHardware::read(
 
   ReadImu(publish_diag, diag_array);
   ReadWheels(period);
+  ReadBattery();
 
   if (publish_diag && !diag_array.status.empty()) {
     diag_array.header.stamp = diag_node_->get_clock()->now();
@@ -433,6 +434,16 @@ void MerlinSystemHardware::ReadImu(
     status.values.push_back(MakeKeyValue(key, value));
   }
   diag_array.status.push_back(status);
+}
+
+// NaN until the first BATTERY_STATUS, so the broadcaster reports "not present", never 0 V.
+void MerlinSystemHardware::ReadBattery()
+{
+  for (const auto &[name, descr] : sensor_state_interfaces_) {
+    if (descr.get_prefix_name() == "battery_state") {
+      set_state(name, kestrel_.GetBatteryVoltage());
+    }
+  }
 }
 
 void MerlinSystemHardware::ReadWheels(const rclcpp::Duration & /* period */)

@@ -11,6 +11,9 @@ controller_manager:
     imu_broadcaster:
       type: imu_sensor_broadcaster/IMUSensorBroadcaster
 
+    battery_state_broadcaster:
+      type: battery_state_broadcaster/BatteryStateBroadcaster
+
     led_controller:
       type: gpio_controllers/GpioCommandController
 
@@ -63,6 +66,17 @@ imu_broadcaster:
     static_covariance_orientation: [0.0159, 0.0, 0.0, 0.0, 0.0159, 0.0, 0.0, 0.0, 0.0159]
     static_covariance_angular_velocity: [0.04, 0.0, 0.0, 0.0, 0.04, 0.0, 0.0, 0.0, 0.04]
     static_covariance_linear_acceleration: [0.017, 0.0, 0.0, 0.0, 0.017, 0.0, 0.0, 0.0, 0.017]
+
+# Voltage only; the percentage is linear between min and max (crude for Li-ion).
+battery_state_broadcaster:
+  ros__parameters:
+    update_rate: 1
+    batteries: ['battery_state']
+    battery_state:
+      minimum_voltage: 6.0  # 2S Li-ion empty
+      maximum_voltage: 8.4  # 2S Li-ion full
+      design_capacity: 4.14  # Ah
+      power_supply_technology: 2  # LION
 
 # Onboard RGB LED: led_mode 0 off, 1 solid, 2 blink, 3 alternate; colours are 0xRRGGBB.
 led_controller:

@@ -234,6 +234,17 @@ void Kestrel::OnMessageReceived(uint8_t msg_id, const std::vector<uint8_t> & pay
         break;
       }
 
+    case MSG_ID::BATTERY_STATUS: {
+        if (payload.size() < sizeof(BatteryStatusPayload)) {
+          RCLCPP_WARN(logger_, "BatteryStatus: short payload (%zu bytes)", payload.size());
+          return;
+        }
+        BatteryStatusPayload p{};
+        std::memcpy(&p, payload.data(), sizeof(BatteryStatusPayload));
+        battery_voltage_v_ = static_cast<double>(p.voltage_cv) / 100.0;
+        break;
+      }
+
     default:
       // ACKs are consumed by the base class; sonar zeros and VERSION_INFO are unused.
       break;

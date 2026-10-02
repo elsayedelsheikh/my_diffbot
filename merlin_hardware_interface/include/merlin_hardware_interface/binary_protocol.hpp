@@ -35,6 +35,7 @@ constexpr uint8_t WHEEL_FEEDBACK = 0x10;
 constexpr uint8_t IMU_DATA = 0x11;
 constexpr uint8_t PID_DEBUG = 0x13;
 constexpr uint8_t HEARTBEAT = 0x20;
+constexpr uint8_t BATTERY_STATUS = 0x21;
 constexpr uint8_t ACK = 0xF0;
 }  // namespace MSG_ID
 
@@ -166,6 +167,26 @@ struct HeartbeatPayload          // 0x20 — 17 B
   uint16_t crc_error_count;
   uint16_t timeout_event_count;
   uint8_t  system_status;
+};
+
+struct BatteryStatusPayload      // 0x21 — 33 B, Kestrel fills only voltage_cv
+{
+  uint32_t timestamp_sec;
+  uint32_t timestamp_nsec;
+  uint16_t voltage_cv;
+  uint16_t cell_1_cv;
+  uint16_t cell_2_cv;
+  uint16_t cell_3_cv;
+  uint16_t cell_4_cv;
+  int16_t  current_ca;     // Signed: +ve = discharging, -ve = charging
+  int16_t  remaining_cah;  // Remaining capacity in centi-Ah
+  uint8_t  battery_percent;
+  uint16_t time_to_full_m;  // Time to full charge in minutes
+  uint16_t time_to_empty_m;  // Time to full discharge in minutes
+  int16_t  battery_temp_sensor_1_c;
+  int16_t  battery_temp_sensor_2_c;
+  uint8_t  battery_error_code;  // Tells if battery exceeded critical temp
+  uint8_t  power_supply_status;
 };
 
 #pragma pack(pop)
