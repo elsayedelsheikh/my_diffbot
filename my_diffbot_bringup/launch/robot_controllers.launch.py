@@ -109,7 +109,9 @@ def generate_launch_description():
         package='controller_manager',
         executable='ros2_control_node',
         parameters=[{'use_sim_time': use_sim_time}, robot_controllers_config],
-        arguments=['--ros-args', '--log-level', log_level],
+        # TODO: drop the base-controller override once diff_drive_controller > 4.42.1 stops warning every 1 s on cmd_vel timeout.
+        arguments=['--ros-args', '--log-level', log_level,
+                   '--log-level', 'my_diffbot_base_controller:=error'],
         output='both',
     )
 
