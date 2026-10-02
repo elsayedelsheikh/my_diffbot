@@ -36,10 +36,11 @@ public:
   /// @brief Send SetPIDGains (0x03) and await ACK. Gains are × 1000.
   AckStatus SetPIDGains(
     int32_t kp_l, int32_t ki_l, int32_t kd_l,
-    int32_t kp_r, int32_t ki_r, int32_t kd_r);
+    int32_t kp_r, int32_t ki_r, int32_t kd_r,
+    uint32_t ack_timeout_ms = 3000u);
 
   /// @brief Send SetCommandTimeout (0x04) and await ACK.
-  AckStatus SetCommandTimeout(uint16_t timeout_ms);
+  AckStatus SetCommandTimeout(uint16_t timeout_ms, uint32_t ack_timeout_ms = 3000u);
 
   /// @brief Send Deactivate (0x08) and await ACK.
   AckStatus Deactivate();

@@ -67,7 +67,8 @@ AckStatus RoboAuto::Handshake()
 
 AckStatus RoboAuto::SetPIDGains(
   int32_t kp_l, int32_t ki_l, int32_t kd_l,
-  int32_t kp_r, int32_t ki_r, int32_t kd_r)
+  int32_t kp_r, int32_t ki_r, int32_t kd_r,
+  uint32_t ack_timeout_ms)
 {
   SetPIDGainsPayload p{};
   GetTimestamp(p.timestamp_sec, p.timestamp_nsec);
@@ -82,10 +83,10 @@ AckStatus RoboAuto::SetPIDGains(
     return AckStatus::COMMAND_FAILED;
   }
 
-  return WaitForAck(MSG_ID::SET_PID_GAINS);
+  return WaitForAck(MSG_ID::SET_PID_GAINS, ack_timeout_ms);
 }
 
-AckStatus RoboAuto::SetCommandTimeout(uint16_t timeout_ms)
+AckStatus RoboAuto::SetCommandTimeout(uint16_t timeout_ms, uint32_t ack_timeout_ms)
 {
   SetCommandTimeoutPayload p{};
   GetTimestamp(p.timestamp_sec, p.timestamp_nsec);
@@ -95,7 +96,7 @@ AckStatus RoboAuto::SetCommandTimeout(uint16_t timeout_ms)
     return AckStatus::COMMAND_FAILED;
   }
 
-  return WaitForAck(MSG_ID::SET_CMD_TIMEOUT);
+  return WaitForAck(MSG_ID::SET_CMD_TIMEOUT, ack_timeout_ms);
 }
 
 AckStatus RoboAuto::Deactivate()

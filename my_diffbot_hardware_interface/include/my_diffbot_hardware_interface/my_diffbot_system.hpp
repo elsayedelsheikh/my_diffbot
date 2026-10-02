@@ -98,6 +98,11 @@ private:
   int64_t meas_right_prev_ = 0;
   double meas_stamp_prev_ = 0.0;
   std::array<double, 2> meas_rad_ {};   // EMA-filtered speed [rad/s] (L, R)
+  // Wheel-feedback staleness: frames can stop while heartbeats continue, which
+  // would otherwise leave meas_rad_ (and the odometry) stuck at its last value.
+  uint64_t last_wheel_count_ = 0;
+  rclcpp::Time last_wheel_count_change_;
+  bool wheel_feedback_stale_ = false;
 
   // Last 0x36 frame sent; resent on change and at 1 Hz since it has no ACK.
   std::optional<LedOutput> sent_led_;

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <thread>
 #include <utility>
@@ -30,6 +31,27 @@ namespace
 // rad/s → mrps (milli-rev/s), the SetWheelVelocity wire unit; the introspection
 // mirrors use it too.
 constexpr double kRadToMrps = 1000.0 / (2.0 * M_PI);
+
+// ACK wait for runtime retunes from write(): long enough for a healthy round
+// trip, short enough not to stall the 100 Hz control loop (the activate-time
+// sends keep the 3 s default).
+constexpr uint32_t kRuntimeAckTimeoutMs = 20u;
+
+// No WHEEL_FEEDBACK frame for this long → zero the measured wheel speed.
+constexpr double kWheelFeedbackTimeoutSec = 0.5;
+
+// gpio commands come from user messages: NaN/Inf/out-of-range must not reach a
+// cast (UB). Non-finite maps to 0; finite values clamp to T's range.
+template<typename T>
+T ClampCast(double v)
+{
+  if (!std::isfinite(v)) {
+    return T{};
+  }
+  return static_cast<T>(std::clamp(
+    v, static_cast<double>(std::numeric_limits<T>::lowest()),
+    static_cast<double>(std::numeric_limits<T>::max())));
+}
 
 constexpr std::array<const char *, 6> kGainOrder =
 {"kp_l", "ki_l", "kd_l", "kp_r", "ki_r", "kd_r"};
@@ -166,23 +188,6 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_configure(
     set_state(name, 0.0);
   }
 
-  // Seed the tuning gpio commands with the on_init parameter values so the
-  // blanket zeroing above doesn't register as a "change to 0" once active.
-  const std::array<std::pair<const char *, double>, 7> tuning_seeds = {{
-    {"roboauto_pid/kp_l", static_cast<double>(kp_l_)},
-    {"roboauto_pid/ki_l", static_cast<double>(ki_l_)},
-    {"roboauto_pid/kd_l", static_cast<double>(kd_l_)},
-    {"roboauto_pid/kp_r", static_cast<double>(kp_r_)},
-    {"roboauto_pid/ki_r", static_cast<double>(ki_r_)},
-    {"roboauto_pid/kd_r", static_cast<double>(kd_r_)},
-    {"roboauto_watchdog/cmd_timeout_ms", static_cast<double>(cmd_timeout_ms_)},
-  }};
-  for (const auto & [name, value] : tuning_seeds) {
-    if (gpio_command_interfaces_.count(name) != 0) {
-      set_command(name, value);
-    }
-  }
-
   // A hardware component has no node of its own, so create a private one purely
   // as a publisher factory; publish() needs no executor/spin.
   diag_node_ = std::make_shared<rclcpp::Node>("my_diffbot_hw_diagnostics");
@@ -233,6 +238,9 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_activate(
   last_diag_pub_ = now;
   last_led_send_ = now;
   last_imu_count_ = 0;
+  last_wheel_count_ = 0;
+  last_wheel_count_change_ = now;
+  wheel_feedback_stale_ = false;
   ticks_init_ = false;
   meas_rad_ = {0.0, 0.0};
   sent_led_.reset();
@@ -254,6 +262,24 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_activate(
     static_cast<double>(kd_l_), static_cast<double>(kp_r_),
     static_cast<double>(ki_r_), static_cast<double>(kd_r_)};
   sent_cmd_timeout_ms_ = static_cast<double>(cmd_timeout_ms_);
+
+  // Seed the tuning gpio commands with what was just sent, so neither the
+  // configure-time zeroing nor the deactivate zeroing (or a stale runtime
+  // retune) registers as a "change" on the first write().
+  const std::array<std::pair<const char *, double>, 7> tuning_seeds = {{
+    {"roboauto_pid/kp_l", sent_pid_gains_[0]},
+    {"roboauto_pid/ki_l", sent_pid_gains_[1]},
+    {"roboauto_pid/kd_l", sent_pid_gains_[2]},
+    {"roboauto_pid/kp_r", sent_pid_gains_[3]},
+    {"roboauto_pid/ki_r", sent_pid_gains_[4]},
+    {"roboauto_pid/kd_r", sent_pid_gains_[5]},
+    {"roboauto_watchdog/cmd_timeout_ms", sent_cmd_timeout_ms_},
+  }};
+  for (const auto & [name, value] : tuning_seeds) {
+    if (gpio_command_interfaces_.count(name) != 0) {
+      set_command(name, value);
+    }
+  }
 
   RCLCPP_INFO(get_logger(), "Successfully activated!");
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -435,6 +461,24 @@ void My_diffbotSystemHardware::ReadWheels(const rclcpp::Duration & /* period */)
     return;
   }
 
+  if (feedback.count != last_wheel_count_) {
+    last_wheel_count_ = feedback.count;
+    last_wheel_count_change_ = get_clock()->now();
+    if (wheel_feedback_stale_) {
+      // Frames resumed: restart the speed window from this frame.
+      wheel_feedback_stale_ = false;
+      meas_left_prev_ = feedback.left_ticks;
+      meas_right_prev_ = feedback.right_ticks;
+      meas_stamp_prev_ = feedback.stamp_sec;
+    }
+  } else if ((get_clock()->now() - last_wheel_count_change_).seconds() > kWheelFeedbackTimeoutSec) {
+    wheel_feedback_stale_ = true;
+    meas_rad_ = {0.0, 0.0};
+    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1000,
+      "RoboAuto: wheel feedback stale (no frames > %.1f s); reporting zero wheel velocity",
+      kWheelFeedbackTimeoutSec);
+  }
+
   const int64_t left_delta = feedback.left_ticks - left_encoder_prev_;
   const int64_t right_delta = feedback.right_ticks - right_encoder_prev_;
   left_encoder_prev_ = feedback.left_ticks;
@@ -553,11 +597,13 @@ void My_diffbotSystemHardware::WriteTuning()
     const std::string iface = descr.get_interface_name();
     if (prefix == "roboauto_pid") {
       for (size_t i = 0; i < kGainOrder.size(); ++i) {
-        if (iface == kGainOrder[i]) {
+        if (iface == kGainOrder[i] && std::isfinite(get_command(name))) {
           pid_cmd[i] = get_command(name);
         }
       }
-    } else if (prefix == "roboauto_watchdog" && iface == "cmd_timeout_ms") {
+    } else if (prefix == "roboauto_watchdog" && iface == "cmd_timeout_ms" &&
+      std::isfinite(get_command(name)))
+    {
       timeout_cmd = get_command(name);
     }
   }
@@ -565,12 +611,13 @@ void My_diffbotSystemHardware::WriteTuning()
   if (pid_cmd != sent_pid_gains_) {
     std::array<int32_t, 6> gains {};
     for (size_t i = 0; i < gains.size(); ++i) {
-      gains[i] = static_cast<int32_t>(pid_cmd[i]);
+      gains[i] = ClampCast<int32_t>(pid_cmd[i]);
     }
     RCLCPP_INFO(get_logger(), "RoboAuto: re-tuning PID gains L(%d, %d, %d) R(%d, %d, %d)",
       gains[0], gains[1], gains[2], gains[3], gains[4], gains[5]);
-    if (roboauto_.SetPIDGains(gains[0], gains[1], gains[2], gains[3], gains[4], gains[5]) !=
-      AckStatus::OK)
+    if (roboauto_.SetPIDGains(
+        gains[0], gains[1], gains[2], gains[3], gains[4], gains[5],
+        kRuntimeAckTimeoutMs) != AckStatus::OK)
     {
       RCLCPP_ERROR(get_logger(), "RoboAuto: SetPIDGains not acknowledged!");
     }
@@ -578,9 +625,9 @@ void My_diffbotSystemHardware::WriteTuning()
   }
 
   if (timeout_cmd != sent_cmd_timeout_ms_) {
-    const auto timeout_ms = static_cast<uint16_t>(std::max(timeout_cmd, 0.0));
+    const auto timeout_ms = ClampCast<uint16_t>(timeout_cmd);
     RCLCPP_INFO(get_logger(), "RoboAuto: setting command timeout %u ms", timeout_ms);
-    if (roboauto_.SetCommandTimeout(timeout_ms) != AckStatus::OK) {
+    if (roboauto_.SetCommandTimeout(timeout_ms, kRuntimeAckTimeoutMs) != AckStatus::OK) {
       RCLCPP_ERROR(get_logger(), "RoboAuto: SetCommandTimeout not acknowledged!");
     }
     sent_cmd_timeout_ms_ = timeout_cmd;
@@ -592,10 +639,11 @@ void My_diffbotSystemHardware::WriteLed(const rclcpp::Time & time)
   if (gpio_command_interfaces_.count("led/led_mode") == 0u) {
     return;
   }
-  const int led_mode = static_cast<int>(get_command("led/led_mode"));
-  const auto color = static_cast<uint32_t>(get_command("led/led_color"));
-  const auto color_alt = static_cast<uint32_t>(get_command("led/led_color_alt"));
-  const double period_ms = get_command("led/led_period_ms");
+  const int led_mode = ClampCast<int>(get_command("led/led_mode"));
+  const auto color = ClampCast<uint32_t>(get_command("led/led_color"));
+  const auto color_alt = ClampCast<uint32_t>(get_command("led/led_color_alt"));
+  const double period_ms = std::isfinite(get_command("led/led_period_ms")) ?
+    get_command("led/led_period_ms") : 0.0;
   const auto led = ResolveLed(led_mode, color, color_alt, period_ms, time.seconds());
   if (!led) {
     RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000,
