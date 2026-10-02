@@ -2,3 +2,4 @@
 	path = ultra-base-esp32s3
 	url = git@github.com:elsayedelsheikh/ultra-base-esp32s3.git
 	update = none
+	branch = main
