@@ -80,6 +80,7 @@ services:
 
   robot-bringup:
     extends: dev
+    restart: unless-stopped          # preserves boot/restart behavior (with docker enabled)
     command: ros2 launch my_diffbot_bringup bringup_robot.launch.py mcu_serial_port:=/dev/ttyACM0
 
   start-navigation:
