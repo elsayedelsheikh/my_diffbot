@@ -62,7 +62,7 @@ services:
       - ./.colcon/build/:/overlay_ws/build/:rw
       - ./.colcon/install/:/overlay_ws/install/:rw
       - ./.colcon/log/:/overlay_ws/log/:rw
-      # Live /dev so udev symlinks (/dev/lidar, /dev/roboauto) survive a replug
+      # Live /dev so /dev/lidar and /dev/ttyACM0 survive a replug
       # or an ESP32 reset; a bind of a missing symlink would create a directory.
       - /dev:/dev:rw
       - ./docker/cyclonedds.xml:/cyclonedds.xml:ro

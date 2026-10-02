@@ -4,7 +4,7 @@
   <xacro:arg name="prefix" default="" />
   <xacro:arg name="sim_gazebo" default="false" />
   <xacro:arg name="use_mock_hardware" default="false" />
-  <xacro:arg name="serial_port" default="/dev/roboauto" />
+  <xacro:arg name="serial_port" default="/dev/ttyACM0" />
   <xacro:arg name="baud_rate" default="115200" />
   <xacro:arg name="encoder_counts_per_revolution" default="515" />
   <xacro:arg name="timeout_ms" default="20" />

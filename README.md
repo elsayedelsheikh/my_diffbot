@@ -20,7 +20,7 @@ my_diffbot/
 
 **Hardware**
 - Differential drive chassis — wheel radius 30 mm, wheel separation 255 mm (centre to centre)
-- RoboAuto ESP32-S3 base over native USB (`/dev/roboauto`, binary protocol): L298N motor driver,
+- RoboAuto ESP32-S3 base over native USB (`/dev/ttyACM0`, binary protocol): L298N motor driver,
   hall encoders (515 counts/rev), on-board PID, and a BNO055 9-DOF IMU fused on the MCU
 - LD06 360° LIDAR, 8 m range — Jetson UART (`/dev/ttyTHS1`, 230400 baud)
 
@@ -36,15 +36,15 @@ my_diffbot/
 
 ## Device Permissions
 
-Apply the udev rules on the host so the LIDAR and the RoboAuto base get stable symlinks
-(`/dev/lidar`, `/dev/roboauto`):
+Apply the udev rules on the host so the LIDAR gets a stable symlink (`/dev/lidar`) and the
+RoboAuto base (`/dev/ttyACM0`) is accessible to the `dialout` group:
 
 ```bash
 sudo cp scripts/97-ldlidar.rules scripts/99-roboauto.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
-The `dev` container mounts the live `/dev`, so the symlinks survive a replug or an ESP32 reset.
+The `dev` container mounts the live `/dev`, so the devices survive a replug or an ESP32 reset.
 
 ## WiFi Watchdog
 
@@ -83,7 +83,7 @@ Key arguments:
 | Argument | Default | Description |
 |---|---|---|
 | `use_sim_time` | `false` | Use simulation clock |
-| `mcu_serial_port` | `/dev/roboauto` | RoboAuto serial port |
+| `mcu_serial_port` | `/dev/ttyACM0` | RoboAuto serial port |
 | `mcu_baud_rate` | `115200` | RoboAuto baud rate (ignored by the USB CDC link) |
 | `lidar_serial_port` | `/dev/ttyTHS1` | LIDAR serial port |
 

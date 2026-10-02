@@ -19,7 +19,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             'mcu_serial_port',
-            default_value='/dev/roboauto',
+            default_value='/dev/ttyACM0',
             description='Serial port for RoboAuto communication.',
         )
     )

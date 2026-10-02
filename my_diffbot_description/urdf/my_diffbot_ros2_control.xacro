@@ -5,7 +5,7 @@
   <xacro:macro name="my_diffbot_ros2_control" params="
     name
     mock_hardware:=false
-    serial_port:=/dev/roboauto
+    serial_port:=/dev/ttyACM0
     baud_rate:=115200
     encoder_counts_per_revolution:=515
     timeout_ms:=20
