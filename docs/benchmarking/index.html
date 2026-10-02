@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Base Bench Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a field procedure. Sticky step rail on the left (progress per step), one work column on the
+   right; every step is Do (checklist) -> Plot -> Record (number fields scored live) -> Screenshot. */
+:root {
+  --bg: #f4f6f7; --surface: #fcfcfb; --fg: #12171b; --fg-2: #4a535b; --muted: #7a838a;
+  --rule: #dce1e4; --accent: #1d5ea8; --code-bg: #eceff1; --band: rgba(42,120,214,.08);
+  --good: #0ca30c; --warn: #c98a00; --crit: #d03b3b; --input: #ffffff;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101315; --surface: #171b1e; --fg: #eef1f3; --fg-2: #b6bec5; --muted: #858d94;
+    --rule: #2a3035; --accent: #6aa5ec; --code-bg: #1f2428; --band: rgba(57,135,229,.12);
+    --warn: #fab219; --input: #101315; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101315; --surface: #171b1e; --fg: #eef1f3; --fg-2: #b6bec5; --muted: #858d94;
+  --rule: #2a3035; --accent: #6aa5ec; --code-bg: #1f2428; --band: rgba(57,135,229,.12);
+  --warn: #fab219; --input: #101315; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 15px/1.6 var(--font-body); }
+a { color: var(--accent); }
+p { margin: 0; max-width: 72ch; }
+code { font-family: var(--font-mono); font-size: .87em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { position: relative; margin: 0; background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font: 400 12.5px/1.55 var(--font-mono); }
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.copy { position: absolute; top: 6px; right: 6px; font: 500 11px/1 var(--font-mono); padding: 5px 8px; border-radius: 5px; border: 1px solid var(--rule); background: var(--surface); color: var(--fg-2); cursor: pointer; }
+button, .btn { font: 500 13px/1 var(--font-body); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--rule); background: var(--surface); color: var(--fg); cursor: pointer; }
+button:hover, .btn:hover { border-color: var(--accent); }
+button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 40px; max-width: 78rem; margin: 0 auto; padding: 0 24px; }
+.rail { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; padding: 32px 0; display: flex; flex-direction: column; gap: 18px; }
+.rail .brand { font: 600 18px/1.2 var(--font-display); }
+.bar { height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--good); transition: width .2s; }
+.rail .overall { font: 400 12px/1.4 var(--font-mono); color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
+.rail nav { display: flex; flex-direction: column; }
+.rail nav .grp { font: 500 11px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 12px 0 6px; }
+.rail nav a { display: flex; justify-content: space-between; gap: 8px; padding: 5px 10px; border-left: 2px solid var(--rule); color: var(--fg-2); text-decoration: none; font-size: 14px; }
+.rail nav a:hover { color: var(--fg); }
+.rail nav a.on { border-left-color: var(--accent); color: var(--fg); font-weight: 500; }
+.rail nav a .p { font: 400 11.5px/1.9 var(--font-mono); color: var(--muted); }
+.rail nav a.done .p { color: var(--good); }
+.rail .tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.rail .tools button { font-size: 12px; padding: 6px 9px; }
+
+main { padding: 40px 0 120px; display: flex; flex-direction: column; gap: 56px; min-width: 0; }
+header { display: flex; flex-direction: column; gap: 12px; }
+.eyebrow { font: 500 12px/1.4 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 600 clamp(30px,5vw,42px)/1.08 var(--font-display); margin: 0; }
+h2 { font: 600 24px/1.2 var(--font-display); margin: 0; }
+h3 { font: 600 15px/1.3 var(--font-body); margin: 0; }
+.lede { font-size: 16.5px; color: var(--fg-2); }
+.flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 10px; }
+.flow div { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: var(--fg-2); }
+.flow b { display: block; color: var(--fg); font-size: 14px; }
+
+section.step { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 16px; min-width: 0; }
+.shead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+.num { font: 600 13px/1 var(--font-mono); color: var(--surface); background: var(--fg); border-radius: 5px; padding: 5px 7px; }
+.shead .meta { margin-left: auto; font: 400 12px/1.4 var(--font-mono); color: var(--muted); }
+.why { color: var(--fg-2); }
+.block { display: flex; flex-direction: column; gap: 8px; }
+.label { font: 500 11.5px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 14px; }
+.two > * { min-width: 0; }
+.small { font-size: 13.5px; color: var(--fg-2); }
+ul.clean { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 5px; }
+
+.checklist { display: flex; flex-direction: column; gap: 2px; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 6px; }
+.chk { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 14.5px; }
+.chk:hover { background: var(--band); }
+.chk input { width: 16px; height: 16px; margin: 3px 0 0; accent-color: var(--good); cursor: pointer; }
+.chk:has(input:checked) > span { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--rule); }
+.chk:has(input:checked) > span code { text-decoration: line-through; }
+
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+th { font: 500 11.5px/1.4 var(--font-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.n { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--fg-2); }
+td .sub { display: block; font-size: 12.5px; color: var(--muted); }
+.field { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+input.v, .pid input { width: 6.5rem; font: 400 14px/1 var(--font-mono); padding: 6px 8px; border: 1px solid var(--rule); border-radius: 5px; background: var(--input); color: var(--fg); }
+.pid input { width: 4.6rem; }
+.field .u { font: 400 12px/1 var(--font-mono); color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 6px; font: 500 12.5px/1 var(--font-body); white-space: nowrap; }
+.pill::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--rule)); }
+.pill.ok { --c: var(--good); } .pill.watch { --c: var(--warn); } .pill.fail { --c: var(--crit); }
+.pill.none { color: var(--muted); }
+
+.session { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 12px; }
+.session label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--fg-2); }
+.session input, .session textarea { font: 400 14px/1.3 var(--font-body); padding: 7px 9px; border: 1px solid var(--rule); border-radius: 5px; background: var(--input); color: var(--fg); width: 100%; }
+.session .wide { grid-column: 1 / -1; }
+
+.note { border-left: 3px solid var(--warn); background: var(--surface); padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 14px; }
+details.ref { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }
+details.ref > summary { cursor: pointer; font-weight: 500; font-size: 14px; }
+details.ref[open] > summary { margin-bottom: 10px; }
+.tally { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; }
+.derived { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 12px; }
+.derived .card b { font: 600 22px/1.2 var(--font-body); }
+
+figure.shot { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+figure.shot img { width: 100%; border: 1px solid var(--rule); border-radius: 6px; display: block; }
+figure.shot.missing img { display: none; }
+figure.shot.missing::before { content: "Screenshot slot · save as docs/benchmarking/" attr(data-file); display: block; padding: 18px 14px; border: 1.5px dashed var(--rule); border-radius: 6px; color: var(--muted); font: 400 12.5px/1.4 var(--font-mono); text-align: center; }
+figure.shot figcaption { font-size: 13px; color: var(--fg-2); }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 16px; }
+  .rail { position: static; height: auto; padding: 24px 0 0; }
+  .rail nav { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+  .rail nav .grp { display: none; }
+  .rail nav a { border: 1px solid var(--rule); border-radius: 5px; padding: 3px 8px; font-size: 13px; }
+  .rail nav a .p { display: none; }
+  main { padding-top: 28px; }
+}
+@media print { .rail, .copy { display: none; } .layout { display: block; } }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="rail">
+  <div class="brand">Base bench</div>
+  <div class="overall"><div class="bar"><i id="bar-all"></i></div><span id="txt-all">0 of 0 numbers recorded</span></div>
+  <nav id="railnav">
+    <span class="grp">Prepare</span>
+    <a href="#session">Session <span class="p" data-p="session"></span></a>
+    <a href="#setup">Setup <span class="p" data-p="setup"></span></a>
+    <a href="#pj">PlotJuggler <span class="p" data-p="pj"></span></a>
+    <span class="grp">Tests</span>
+    <a href="#t0">T0 Standing still <span class="p" data-p="t0"></span></a>
+    <a href="#t1">T1 Wheel steps <span class="p" data-p="t1"></span></a>
+    <a href="#t2">T2 Straights <span class="p" data-p="t2"></span></a>
+    <a href="#t3">T3 Low speed <span class="p" data-p="t3"></span></a>
+    <a href="#t4">T4 Arcs <span class="p" data-p="t4"></span></a>
+    <a href="#t5">T5 Reversals <span class="p" data-p="t5"></span></a>
+    <a href="#t6">T6 720° turn <span class="p" data-p="t6"></span></a>
+    <a href="#t7">T7 Loop closure <span class="p" data-p="t7"></span></a>
+    <a href="#t8">T8 Rates <span class="p" data-p="t8"></span></a>
+    <span class="grp">Results</span>
+    <a href="#pid">PID tuning <span class="p" data-p="pid"></span></a>
+    <a href="#score">Scorecard <span class="p" data-p="score"></span></a>
+    <a href="#nav2">Nav2 settings</a>
+    <a href="#ref">Reference</a>
+  </nav>
+  <div class="tools">
+    <button id="b-export" title="Download everything on this page as JSON">Export</button>
+    <button id="b-import">Import</button>
+    <button id="b-md" title="Copy the scorecard as a Markdown table">Copy table</button>
+    <button id="b-reset">Reset</button>
+    <input type="file" id="f-import" accept="application/json" hidden>
+  </div>
+  <p class="small" style="font-size:12px">Ticks and numbers are saved in this browser. Export a JSON per MCU and keep it next to the screenshots.</p>
+</aside>
+
+<main>
+<header>
+  <div class="eyebrow">Walkthrough · diff-drive base · PlotJuggler 4</div>
+  <h1>Benchmark a mobile base for SLAM and Nav2</h1>
+  <p class="lede">Work top to bottom. Each step has a checklist to tick, what to plot, and fields for the numbers you read off. Every number is scored against its target as you type, and the scorecard and suggested Nav2 limits fill in by themselves. Speeds and distances match the <a href="https://claude.ai/artifact/8D3o277HEi3dWkdhPCRzyS">2026-10-01 Kestrel report</a>, so its numbers serve as the baseline column.</p>
+  <div class="flow">
+    <div><b>1 · Prepare</b>Session details, robot and laptop setup, a PlotJuggler layout. ~30 min, once.</div>
+    <div><b>2 · Test</b>T0–T8, in order, twice each. ~1.5 h.</div>
+    <div><b>3 · Tune</b>Only if T1/T3 fail: PID sweep, then rerun T1–T3.</div>
+    <div><b>4 · Results</b>Scorecard, Nav2 limits, export JSON.</div>
+  </div>
+</header>
+
+<!-- ───────────── PREPARE ───────────── -->
+<section class="step" id="session">
+  <div class="shead"><span class="num">S</span><h2>Session</h2><span class="meta">what was tested, on what</span></div>
+  <div class="session">
+    <label>MCU / board<input data-k="m.mcu" placeholder="Kestrel ESP32-S3, Ultra firmware"></label>
+    <label>Firmware version / commit<input data-k="m.fw" placeholder="ultra-base @ abc123"></label>
+    <label>Date<input type="date" data-k="m.date"></label>
+    <label>PID gains (kp / ki / kd)<input data-k="m.gains" placeholder="1.5 / 3 / 0"></label>
+    <label>Motor supply and charge<input data-k="m.supply" placeholder="pack, 100 %"></label>
+    <label>Floor spot<input data-k="m.floor" placeholder="lab, tile, by the door"></label>
+    <label class="wide">Notes<textarea data-k="m.notes" rows="2" placeholder="anything odd: wiring, temperature, a stall..."></textarea></label>
+  </div>
+</section>
+
+<section class="step" id="setup">
+  <div class="shead"><span class="num">P1</span><h2>Robot and laptop setup</h2><span class="meta">~15 min</span></div>
+  <div class="block"><span class="label">Every session</span>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span>Jetson in MAXN: <code>nvpmodel -q</code> says mode 0. In 5W, topics stall up to 360 ms and every timing number is wrong.</span></label>
+    <label class="chk"><input type="checkbox"><span>Motor supply fully charged, and with no auto-off (a bank that cuts out under low draw looks like a stalled wheel).</span></label>
+    <label class="chk"><input type="checkbox"><span>Same floor spot as last time (wheel scale moved ±1.5 % between spots). Clear 1.2 m straight ahead and a 1 m circle.</span></label>
+    <label class="chk"><input type="checkbox"><span>Start pose taped: a strip along one wheel's outer face and a cross under the axle centre.</span></label>
+    <label class="chk"><input type="checkbox"><span>Bringup running, no Nav2: <code>docker compose up -d robot-bringup</code>.</span></label>
+    <label class="chk"><input type="checkbox"><span>Laptop sees the robot (commands below): <code>ros2 topic list</code> shows <code>/odom</code> and <code>/controller_manager/introspection_data/full</code>.</span></label>
+    <label class="chk"><input type="checkbox"><span>Stop plan understood: no fence here. Ctrl-C on <code>seq.py</code> sends zero; if it dies, diff_drive brakes after 0.5 s and the MCU after 250 ms.</span></label>
+  </div></div>
+  <div class="two">
+    <div class="block"><span class="label">Laptop shell (every terminal)</span>
+<pre><code>source /opt/ros/jazzy/setup.bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export ROS_DOMAIN_ID=0
+export CYCLONE_IFACE=enp4s0      # ip -br link
+export CYCLONEDDS_URI=file://$PWD/docker/cyclonedds.xml
+ros2 topic list --no-daemon</code></pre>
+    <p class="small">Wrong interface name fails with "failed to create domain". Run from the repo root so <code>$PWD</code> is right.</p></div>
+    <div class="block"><span class="label">Jetson: bag recorder (for T1 latency, T8)</span>
+<pre><code>rec() { mkdir -p "$HOME/kestrel_bench/manual"
+  docker run --rm -it --init --network host --ipc host \
+  --user "$(id -u):$(id -g)" -e HOME=/data \
+  -e RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  -v "$HOME/kestrel_bench/manual:/data" my_diffbot:dev \
+  bash -lc "source /opt/ros/jazzy/setup.bash && cd /data && \
+  exec ros2 bag record -o $1 /cmd_vel \
+  /my_diffbot_base_controller/cmd_vel_out \
+  /my_diffbot_base_controller/odom /odom /imu/data \
+  /joint_states /diagnostics \
+  /controller_manager/introspection_data/full \
+  /controller_manager/introspection_data/names \
+  /controller_manager/introspection_data/values"; }
+rec kestrel_t1      # Ctrl-C when the test ends</code></pre>
+    <p class="small">Live streaming over WiFi drops 100 Hz samples, so its gaps are WiFi gaps. Anything about timing comes from a bag recorded on the Jetson.</p></div>
+  </div>
+  <div class="block"><span class="label">Drive every test with</span>
+<pre><code>python3 scripts/bench/seq.py v,w,secs [v,w,secs ...]   # m/s, rad/s, s · 20 Hz TwistStamped, then zero</code></pre></div>
+</section>
+
+<section class="step" id="pj">
+  <div class="shead"><span class="num">P2</span><h2>PlotJuggler layout</h2><span class="meta">~15 min, once per base</span></div>
+  <p class="why">Build one four-pane layout, save it, and reuse it for every test and every future MCU.</p>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span><i>Streaming → ROS2 Topic Subscriber</i>. Select <code>/joint_states</code>, <code>/odom</code>, <code>/my_diffbot_base_controller/odom</code>, <code>/my_diffbot_base_controller/cmd_vel_out</code>, <code>/imu/data</code>, <code>/controller_manager/introspection_data/full</code>. Untick <i>use header.stamp</i> unless both clocks are chrony-synced.</span></label>
+    <label class="chk"><input type="checkbox"><span>Split into 4 panes (right-click → <i>Split horizontally</i>).</span></label>
+    <label class="chk"><input type="checkbox"><span>Pane 1, <b>left wheel</b>: <code>left_wheel.target_velocity</code>, <code>.firmware_velocity</code>, <code>.measured_velocity</code> (mrps).</span></label>
+    <label class="chk"><input type="checkbox"><span>Pane 2, <b>right wheel</b>: same three.</span></label>
+    <label class="chk"><input type="checkbox"><span>Pane 3, <b>duty</b>: <code>left_wheel.pwm</code>, <code>right_wheel.pwm</code> (‰, 1000 = 100 %).</span></label>
+    <label class="chk"><input type="checkbox"><span>Pane 4, <b>body</b>: <code>cmd_vel_out</code> angular z, <code>/odom</code> twist angular z, <code>/imu/data/angular_velocity/z</code>.</span></label>
+    <label class="chk"><input type="checkbox"><span>Add a 200 ms moving average to each firmware velocity (right-click curve → <i>Apply filter → Moving Average</i>). Overshoot is read on it.</span></label>
+    <label class="chk"><input type="checkbox"><span>Second tab for odometry: XY path of <code>/odom</code> position x vs y (select both, drag with the <b>right</b> mouse button), plus <code>/odom</code> yaw.</span></label>
+    <label class="chk"><input type="checkbox"><span><i>File → Save layout</i> as <code>docs/benchmarking/base_bench.xml</code>. Commit it.</span></label>
+    <label class="chk"><input type="checkbox"><span>Fix the window size (e.g. 1600×900) so screenshots compare side by side.</span></label>
+  </div>
+  <details class="ref"><summary>How to read a number in PlotJuggler</summary>
+    <ul class="clean small">
+      <li><b>Mean, σ, min, max:</b> zoom to the steady part, then right-click → <i>Statistics</i> (visible range).</li>
+      <li><b>A single value or a time:</b> drag the time slider; the legend shows each series at the tracker.</li>
+      <li><b>Angle from a rate:</b> <i>Apply filter → Integral</i> on an ω series.</li>
+      <li><b>Message gaps:</b> custom series (<i>f(x)</i>) on any <code>/joint_states</code> field, Lua: <code>if prev then d=time-prev end prev=time return d or 0</code>.</li>
+      <li><b>Wheel target for an MCU without introspection:</b> custom series on <code>cmd_vel_out</code> linear x, with <code>v1</code> = angular z: <code>return (value - v1*0.125)/0.0308*159.15</code> (left, mrps; <code>+</code> for right).</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ───────────── TESTS ───────────── -->
+<section class="step" id="t0">
+  <div class="shead"><span class="num">T0</span><h2>Standing still</h2><span class="meta">60 s · no motion</span></div>
+  <p class="why">Proves the zero point: odometry must not move while the robot doesn't.</p>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span>Robot on the tape marks, nothing touching it.</span></label>
+    <label class="chk"><input type="checkbox"><span>Clear the PlotJuggler buffer, wait 60 s.</span></label>
+    <label class="chk"><input type="checkbox"><span>Read the odom tab: x, y, yaw change over the 60 s. Pane 4: mean of IMU ω<sub>z</sub> is the gyro bias.</span></label>
+    <label class="chk"><input type="checkbox"><span>Screenshot, fill the numbers.</span></label>
+  </div>
+  <div class="rec" data-test="t0"></div>
+  <figure class="shot" data-file="img/t0-static.png"><img src="img/t0-static.png" alt="Static drift"><figcaption>Odom pose flat over 60 s.</figcaption></figure>
+</section>
+
+<section class="step" id="t1">
+  <div class="shead"><span class="num">T1</span><h2>Wheel steps in place</h2><span class="meta">the PID test · 0.10 and 0.19 m/s per wheel</span></div>
+  <p class="why">How fast and how cleanly each wheel reaches its target. Everything Nav2 does sits on top of this.</p>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span>On the Jetson: <code>rec &lt;mcu&gt;_t1</code> (for latency).</span></label>
+    <label class="chk"><input type="checkbox"><span>Run <code>seq.py 0,0.8,4 0,0,2 0,-0.8,4 0,0,2 0,1.5,4 0,0,2 0,-1.5,4</code></span></label>
+    <label class="chk"><input type="checkbox"><span>Panes 1–2, each step: <b>overshoot</b> = peak of the 200 ms average above target ÷ target. <b>Settling</b> = end of the target ramp until within ±5 % for good. <b>Steady error</b> = mean of the last 2 s ÷ target − 1. <b>Ripple</b> = σ ÷ target.</span></label>
+    <label class="chk"><input type="checkbox"><span>Pane 1–2: <b>firmware vs measured</b> steady-state gap. A big gap means the speed estimate is off, not the gains.</span></label>
+    <label class="chk"><input type="checkbox"><span>Pane 3: <b>duty</b> at 0.8 and 1.5 rad/s.</span></label>
+    <label class="chk"><input type="checkbox"><span>Pane 4: <b>twist scale</b> = <code>/odom</code> ω ÷ IMU ω − 1 in steady state.</span></label>
+    <label class="chk"><input type="checkbox"><span>From the bag: <b>latency</b> = first non-zero <code>cmd_vel_out</code> → first non-zero wheel velocity.</span></label>
+    <label class="chk"><input type="checkbox"><span>Run it all a second time; record the worse of the two.</span></label>
+  </div>
+  <div class="rec" data-test="t1"></div>
+  <div class="two">
+    <figure class="shot" data-file="img/t1-spin-step.png"><img src="img/t1-spin-step.png" alt="Spin step"><figcaption>One step zoomed in: target, firmware, measured, 200 ms average.</figcaption></figure>
+    <figure class="shot" data-file="img/t1-latency.png"><img src="img/t1-latency.png" alt="Latency"><figcaption>First 150 ms: command edge to first motion.</figcaption></figure>
+  </div>
+</section>
+
+<section class="step" id="t2">
+  <div class="shead"><span class="num">T2</span><h2>Straights and distance</h2><span class="meta">~0.9 m legs at 0.1 / 0.2 / 0.3 m/s</span></div>
+  <p class="why">Both wheels agree, and odometry gets the distance right.</p>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span><code>seq.py 0.1,0,9</code> · tape the distance from the start cross · read <code>/odom</code> Δx · back up with <code>seq.py -0.1,0,9</code>.</span></label>
+    <label class="chk"><input type="checkbox"><span>Repeat with <code>0.2,0,4.5</code> and <code>0.3,0,3</code>.</span></label>
+    <label class="chk"><input type="checkbox"><span><b>Distance error</b> = odom Δx ÷ tape − 1 (worst leg). <b>L/R mismatch</b> = (mean L − mean R) ÷ target.</span></label>
+    <label class="chk"><input type="checkbox"><span><b>Heading drift</b>: how far the axle cross left the tape line, per metre.</span></label>
+  </div>
+  <div class="rec" data-test="t2"></div>
+  <figure class="shot" data-file="img/t2-straight.png"><img src="img/t2-straight.png" alt="Straight"><figcaption>0.2 m/s leg, both wheels on target.</figcaption></figure>
+</section>
+
+<section class="step" id="t3">
+  <div class="shead"><span class="num">T3</span><h2>Low-speed floor</h2><span class="meta">the slowest speed the base can hold</span></div>
+  <p class="why">Goal approach and in-place rotation live here. The floor you find becomes a Nav2 minimum.</p>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span>Straight: <code>seq.py 0.02,0,5 0.03,0,5 0.05,0,5</code></span></label>
+    <label class="chk"><input type="checkbox"><span>Spin: <code>seq.py 0,0.2,5 0,0.3,5 0,0.4,5 0,0.6,5</code>. Judge spins on IMU ω<sub>z</sub> (the wheels slip).</span></label>
+    <label class="chk"><input type="checkbox"><span>Floor = slowest step within 10 % with no stall (a flat zero, then a jump).</span></label>
+  </div>
+  <div class="rec" data-test="t3"></div>
+  <figure class="shot" data-file="img/t3-low-speed.png"><img src="img/t3-low-speed.png" alt="Low speed"><figcaption>Stick-slip below the floor, clean tracking above it.</figcaption></figure>
+</section>
+
+<section class="step" id="t4">
+  <div class="shead"><span class="num">T4</span><h2>Arcs at the limits</h2><span class="meta">0.25 m radius · 0.8 m clear circle</span></div>
+  <p class="why">Headroom: at the top speeds the outer wheel needs duty left over for corrections.</p>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span><code>seq.py 0.30,1.2,5 0,0,2 0.35,1.4,5</code></span></label>
+    <label class="chk"><input type="checkbox"><span>Outer (right) wheel at 0.35 / 1.4 (target 0.525 m/s): mean <b>duty</b> and steady <b>error</b>.</span></label>
+  </div>
+  <div class="rec" data-test="t4"></div>
+  <figure class="shot" data-file="img/t4-arc.png"><img src="img/t4-arc.png" alt="Arc"><figcaption>Outer-wheel duty against the ceiling.</figcaption></figure>
+</section>
+
+<section class="step" id="t5">
+  <div class="shead"><span class="num">T5</span><h2>Reversals</h2><span class="meta">±0.2 m/s, 1 s each</span></div>
+  <p class="why">Direction changes stay fast, and odometry keeps the right sign.</p>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span><code>seq.py 0.2,0,1 -0.2,0,1 0.2,0,1 -0.2,0,1 0.2,0,1 -0.2,0,1</code></span></label>
+    <label class="chk"><input type="checkbox"><span><b>Delay</b> = target crossing zero → measured moving the new way (worst flip). Use <i>measured</i>: firmware speed carries no sign until a tick moves.</span></label>
+    <label class="chk"><input type="checkbox"><span><b>End error</b>: odom x at the end vs the tape.</span></label>
+  </div>
+  <div class="rec" data-test="t5"></div>
+  <figure class="shot" data-file="img/t5-reversal.png"><img src="img/t5-reversal.png" alt="Reversal"><figcaption>Sign flips: target vs measured.</figcaption></figure>
+</section>
+
+<section class="step" id="t6">
+  <div class="shead"><span class="num">T6</span><h2>720° turn</h2><span class="meta">heading accuracy · 1 rad/s · both directions</span></div>
+  <p class="why">Heading error is what SLAM hates most: it bends the map.</p>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span>Align the robot's side with a long tape line.</span></label>
+    <label class="chk"><input type="checkbox"><span><code>seq.py 0,1.0,12.57</code>, then measure the side vs the line: angle = atan(offset ÷ length).</span></label>
+    <label class="chk"><input type="checkbox"><span>Pane 4 with <i>Integral</i>: total turn from <code>/odom</code>, wheel odom and IMU vs the truth (4π + measured angle).</span></label>
+    <label class="chk"><input type="checkbox"><span>Measure how far the axle cross moved (sideways scrub; odometry can't see it).</span></label>
+    <label class="chk"><input type="checkbox"><span>Repeat with <code>0,-1.0,12.57</code>; record the worse direction.</span></label>
+  </div>
+  <div class="rec" data-test="t6"></div>
+  <figure class="shot" data-file="img/t6-rotation.png"><img src="img/t6-rotation.png" alt="Rotation"><figcaption>Three integrated headings over two turns.</figcaption></figure>
+</section>
+
+<section class="step" id="t7">
+  <div class="shead"><span class="num">T7</span><h2>Loop closure</h2><span class="meta">0.6 m square · 5 CW + 5 CCW · 2.4 m per run</span></div>
+  <p class="why">The odometry Nav2 plans in stays consistent over a full lap.</p>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span>Note <code>/odom</code> x, y, yaw at the start.</span></label>
+    <label class="chk"><input type="checkbox"><span>CCW: <code>seq.py 0.2,0,3 0,1,1.571 0.2,0,3 0,1,1.571 0.2,0,3 0,1,1.571 0.2,0,3 0,1,1.571</code></span></label>
+    <label class="chk"><input type="checkbox"><span>Nudge back exactly onto the tape marks: <code>docker compose run --rm teleop-keyboard</code>. Physically the end pose now equals the start.</span></label>
+    <label class="chk"><input type="checkbox"><span>Odom end − start = the error (truth is zero). Log x, y per run.</span></label>
+    <label class="chk"><input type="checkbox"><span>5 CCW runs, then 5 CW (same command with <code>0,-1,1.571</code>).</span></label>
+    <label class="chk"><input type="checkbox"><span>Average CW and CCW separately. The larger centroid distance √(x̄² + ȳ²) is E<sub>max,syst</sub>.</span></label>
+  </div>
+  <div class="rec" data-test="t7"></div>
+  <figure class="shot" data-file="img/t7-loop.png"><img src="img/t7-loop.png" alt="Loop"><figcaption>EKF vs wheel-only path, one square.</figcaption></figure>
+</section>
+
+<section class="step" id="t8">
+  <div class="shead"><span class="num">T8</span><h2>Rates, gaps and power</h2><span class="meta">from the T1 bag and the whole session</span></div>
+  <p class="why">Fresh data at controller time, and no power dropouts.</p>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span>Load the T1 bag (<i>Data → Load</i>, header.stamp unticked); add the gap series on <code>/joint_states</code>.</span></label>
+    <label class="chk"><input type="checkbox"><span>On the Jetson during motion: <code>ros2 topic hz -w 1000 /joint_states</code> and <code>/odom</code>.</span></label>
+    <label class="chk"><input type="checkbox"><span>Count power dropouts across the session (duty high, wheels at zero).</span></label>
+  </div>
+  <div class="rec" data-test="t8"></div>
+  <figure class="shot" data-file="img/t8-gaps.png"><img src="img/t8-gaps.png" alt="Gaps"><figcaption>Inter-message gap of /joint_states.</figcaption></figure>
+</section>
+
+<!-- ───────────── RESULTS ───────────── -->
+<section class="step" id="pid">
+  <div class="shead"><span class="num">R1</span><h2>PID tuning</h2><span class="meta">only if T1 or T3 fail</span></div>
+  <p class="why">Change one gain at a time, rerun T1, and fill one row per gain set. Pick the knee, not the extreme.</p>
+<pre><code>pid() {  # pid KP KI [KD], x1000 units (1500 = 1.5), both wheels
+  ros2 topic pub -t 3 /kestrel_tuning_controller/commands \
+    control_msgs/msg/DynamicInterfaceGroupValues \
+    "{interface_groups: [kestrel_pid], interface_values: [{interface_names:
+      [kp_l, ki_l, kd_l, kp_r, ki_r, kd_r], values: [$1, $2, ${3:-0}, $1, $2, ${3:-0}]}]}"
+}
+pid 1500.0 3000.0</code></pre>
+  <div class="checklist">
+    <label class="chk"><input type="checkbox"><span><b>Feed-forward first:</b> ki 0, small kp. If the steady error is over ~10 % at every speed, fix the FF in firmware first.</span></label>
+    <label class="chk"><input type="checkbox"><span><b>kp up</b> ×1.5 at a time until ripple or overshoot grows. Settle at about ⅓ of where it oscillates (Kestrel: oscillates at 5, runs at 1.5).</span></label>
+    <label class="chk"><input type="checkbox"><span><b>ki up</b> until the steady error is under 3 % within ~0.3 s, stopping before overshoot passes 10 %.</span></label>
+    <label class="chk"><input type="checkbox"><span>Leave <b>kd</b> at 0: tick-based speed is too noisy to differentiate.</span></label>
+    <label class="chk"><input type="checkbox"><span>Confirm each change in the bringup log (the MCU only hears values that change).</span></label>
+    <label class="chk"><input type="checkbox"><span>Write the winner into the xacro defaults. Live values reset on restart.</span></label>
+  </div>
+  <div class="table-wrap pid"><table>
+    <thead><tr><th>#</th><th>kp</th><th>ki</th><th>Overshoot %</th><th>Settling ms</th><th>|Steady err| %</th><th>Ripple %</th><th>L−R %</th><th>Low-speed err %</th></tr></thead>
+    <tbody id="pid-body"></tbody>
+  </table></div>
+  <p class="small">Kestrel sweep for reference: kp 1 / ki 2 → 6.0 % overshoot, 3.1 % error, 6.7 % low-speed. kp 1.5 / ki 3 → 5.4 %, 1.7 %, 3.9 %.</p>
+  <div class="note">Read overshoot on the <b>firmware</b> velocity's 200 ms average, against the <b>ramped</b> target. One tick in the MCU's 100 ms window is about 3.7 % at 0.1 m/s, so raw samples are mostly quantization.</div>
+  <figure class="shot" data-file="img/pid-sweep.png"><img src="img/pid-sweep.png" alt="PID sweep"><figcaption>Same step, three gain sets overlaid.</figcaption></figure>
+</section>
+
+<section class="step" id="score">
+  <div class="shead"><span class="num">R2</span><h2>Scorecard</h2><span class="meta">fills from the test fields</span></div>
+  <div class="tally" id="tally"></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Test</th><th>Metric</th><th>Target</th><th>Kestrel<br>2026-10-01</th><th>This run</th><th>Status</th></tr></thead>
+    <tbody id="score-body"></tbody>
+  </table></div>
+  <p class="small">Targets are rules of thumb for a small indoor base; Nav2 publishes no hard numbers. Tape measurements carry a few mm and about 0.5° more scatter than the report's lidar ground truth. If a check is borderline, rerun it with <code>scripts/bench/run.sh bench &lt;test&gt;</code>.</p>
+</section>
+
+<section class="step" id="nav2">
+  <div class="shead"><span class="num">R3</span><h2>Nav2 and SLAM settings</h2><span class="meta">derived from your numbers</span></div>
+  <div class="derived">
+    <div class="card"><span class="label">Rotation floor (T3)</span><b id="d-floor">—</b><span class="small">DWB <code>min_speed_theta</code>, rotation shim <code>rotate_to_heading_angular_vel</code> and spin behaviour all stay at or above this.</span></div>
+    <div class="card"><span class="label">Outer-wheel cap at 90 % duty (T4)</span><b id="d-cap">—</b><span class="small" id="d-cap-txt">Keep v + 0.125·|ω| at or below this.</span></div>
+    <div class="card"><span class="label">Twist scale (T1)</span><b id="d-twist">—</b><span class="small" id="d-twist-txt">MPPI and DWB seed predictions with this twist.</span></div>
+  </div>
+  <div class="two">
+    <div class="card"><h3>All controllers</h3><ul class="clean small">
+      <li>Velocity smoother = diff_drive limits or lower: 0.35 m/s, 1.5 rad/s; 0.5 / −0.8 m/s²; 2.0 / −3.0 rad/s².</li>
+      <li>Smoother feedback <code>OPEN_LOOP</code> unless T8 is clean.</li>
+      <li>Yaw goal tolerance wide enough that the last correction never asks for a turn below the floor.</li></ul></div>
+    <div class="card"><h3>MPPI</h3><ul class="clean small">
+      <li><code>vx_max</code>, <code>wz_max</code> under the cap; <code>model_dt</code> = controller period.</li>
+      <li>Most sensitive to twist scale and latency: a biased ω shows up as wobble on straight paths.</li>
+      <li>It asks for slow rotations freely. With a floor, pair it with the rotation shim.</li></ul></div>
+    <div class="card"><h3>DWB</h3><ul class="clean small">
+      <li><code>acc_lim_*</code>, <code>decel_lim_*</code> = the base limits.</li>
+      <li><code>min_speed_theta</code> ≥ the floor; <code>max_vel_x</code>, <code>max_vel_theta</code> under the cap.</li></ul></div>
+    <div class="card"><h3>Rotation shim</h3><ul class="clean small">
+      <li><code>rotate_to_heading_angular_vel</code> between the floor and 1.5 rad/s (check its default against that).</li>
+      <li><code>max_angular_accel</code> ≤ 2.0 rad/s².</li>
+      <li>Expect small costmap shifts after long spins (T6 scrub).</li></ul></div>
+    <div class="card"><h3>SLAM (slam_toolbox)</h3><ul class="clean small">
+      <li>Needs T6 and T7 green: heading drift bends maps, scale error stretches them.</li>
+      <li>odom → base_footprint continuous, at least as fast as <code>/scan</code> (10 Hz).</li>
+      <li>First map slowly: ≤ 0.2 m/s, turns between the floor and 1 rad/s.</li></ul></div>
+    <div class="card"><h3>AMCL</h3><ul class="clean small">
+      <li>T2 distance and T6 heading errors say how far <code>alpha1–4</code> can drop from the defaults.</li></ul></div>
+  </div>
+</section>
+
+<section class="step" id="ref">
+  <div class="shead"><span class="num">i</span><h2>Reference</h2></div>
+  <details class="ref" open><summary>Signals</summary>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Signal</th><th>Unit</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>*_wheel.target_velocity</code></td><td>mrps</td><td>Wheel target after diff_drive's accel ramp.</td></tr>
+        <tr><td><code>*_wheel.firmware_velocity</code></td><td>mrps</td><td>The MCU's own speed, the one its PID closes on (100 ms tick window; sign added by the host). Tune against this.</td></tr>
+        <tr><td><code>*_wheel.measured_velocity</code></td><td>mrps</td><td>Host speed (ticks over ≥ 40 ms of MCU time, EMA 0.4) = <code>/joint_states</code> velocity, which feeds odometry and the EKF. Judge odometry on this.</td></tr>
+        <tr><td><code>*_wheel.pwm</code></td><td>‰</td><td>Motor duty, 1000 = 100 %.</td></tr>
+        <tr><td><code>/my_diffbot_base_controller/cmd_vel_out</code></td><td>m/s, rad/s</td><td>Body command after accel limits. Generic target for any MCU.</td></tr>
+        <tr><td><code>/my_diffbot_base_controller/odom</code></td><td></td><td>Wheel-only odometry.</td></tr>
+        <tr><td><code>/odom</code></td><td></td><td>EKF (wheel twist + IMU yaw). What Nav2 and SLAM use.</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+  <details class="ref"><summary>Conversions (r = 0.0308 m, b = 0.250 m)</summary>
+<pre><code>mrps         = rad/s × 159.15
+rim m/s      = mrps × 0.0308 × 2π / 1000   (= mrps × 0.0001935)
+wheel target = (v ∓ ω·0.125) / 0.0308      rad/s, left − / right +
+outer wheel  = v + 0.125·|ω|               m/s</code></pre></details>
+</section>
+</main>
+</div>
+
+<script>
+// Metric: [id, test, label, unit, target, Kestrel baseline, why]. target: ['abs'|'<='|'>=', limit] or null (record only).
+const M = [
+  ['drift_xy','t0','Position drift, 60 s','mm',['<=',2],'0.0','A robot waiting at a goal must not "move".'],
+  ['drift_yaw','t0','Heading drift, 60 s','°',['abs',0.1],'0.0002',''],
+  ['gyro_bias','t0','Gyro bias (mean ω<sub>z</sub>)','rad/s',null,'',''],
+  ['overshoot','t1','Overshoot, worst step','%',['<=',10],'6.0','Oscillation near goals; controllers fight the base.'],
+  ['settle','t1','Settling after ramp','ms',null,'44',''],
+  ['ss_err','t1','Steady-state error, worst','%',['abs',3],'1.1','Controllers plan on getting the speed they ask for.'],
+  ['ripple','t1','Ripple σ at 0.8 rad/s','%',null,'3.1',''],
+  ['fw_meas','t1','Firmware vs measured gap','%',['abs',2],'',"A gap means the speed estimate is wrong, not the gains."],
+  ['duty_08','t1','Duty at 0.8 rad/s','%',null,'33',''],
+  ['duty_15','t1','Duty at 1.5 rad/s','%',null,'46',''],
+  ['twist','t1','Odom ω ÷ IMU ω − 1','%',['abs',1],'2.4','MPPI and DWB seed predictions with the current twist.'],
+  ['latency','t1','Command → first motion, worst','ms',['<=',100],'85','About two cycles of a 20 Hz controller.'],
+  ['lr','t2','L/R mismatch','%',['abs',2],'0.4','Curved "straight" lines, constant heading correction.'],
+  ['dist','t2','EKF distance error, worst leg','%',['abs',2],'−1.4','Costmap smear; SLAM has to correct every scan.'],
+  ['ss_lin','t2','Steady error at 0.3 m/s','%',['abs',3],'0.6',''],
+  ['hdrift','t2','Heading drift on straights','°/m',null,'0.5',''],
+  ['floor_lin','t3','Straight floor (≤ 10 % error)','m/s',['<=',0.05],'0.02','Goal approach speed.'],
+  ['floor_spin','t3','Spin floor (≤ 10 % error)','rad/s',['<=',0.4],'0.4','Minimum rotation for every controller and behaviour.'],
+  ['duty_arc','t4','Outer-wheel duty at 0.35 / 1.4','%',['<=',90],'96','No headroom means no correction on sag or carpet.'],
+  ['err_arc','t4','Outer-wheel error at 0.35 / 1.4','%',['abs',3],'−0.1',''],
+  ['rev_delay','t5','Reversal delay, worst flip','ms',null,'150',''],
+  ['rev_end','t5','End error after 6 flips','mm',['abs',20],'7',''],
+  ['h_ekf','t6','EKF heading error per 720°','°',['abs',2],'0.88','Heading error bends SLAM maps.'],
+  ['h_wheel','t6','Wheel-odom heading error per 720°','°',null,'5.4',''],
+  ['gyro_scale','t6','Gyro scale (IMU ÷ truth − 1)','%',null,'3.05',''],
+  ['scrub','t6','Axle-centre scrub','mm',null,'51',''],
+  ['emax_ekf','t7','E<sub>max,syst</sub>, EKF','mm',['<=',48],'6','≤ 2 % of the 2.4 m path; local planning stays consistent.'],
+  ['emax_wheel','t7','E<sub>max,syst</sub>, wheel only','mm',null,'56',''],
+  ['gap_p99','t8','/joint_states gap p99','ms',['<=',50],'27','Stale odometry at controller time.'],
+  ['odom_hz','t8','/odom rate','Hz',['>=',20],'30','At least the controller frequency.'],
+  ['dropouts','t8','Power dropouts in session','count',['<=',0],'2','A dropout looks like a stall to everything upstream.'],
+];
+const PIDCOLS = ['kp','ki','os','settle','err','ripple','lr','low'];
+const KEY = 'base-bench-v1';
+let S = {};
+try { S = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+const $ = (q, el = document) => el.querySelector(q);
+const $$ = (q, el = document) => [...el.querySelectorAll(q)];
+const num = k => { const x = parseFloat(String(S[k] ?? '').replace('−', '-')); return isNaN(x) ? null : x; };
+const tgt = t => !t ? '—' : (t[0] === 'abs' ? '|x| ≤ ' : t[0] === '<=' ? '≤ ' : '≥ ') + t[1];
+
+function status(m) {
+  const x = num('v.' + m[0]), t = m[4];
+  if (x === null) return '';
+  if (!t) return 'none';
+  const v = t[0] === 'abs' ? Math.abs(x) : x, lim = t[1];
+  if (t[0] === '>=') return v >= lim ? 'ok' : v >= lim * 0.8 ? 'watch' : 'fail';
+  return v <= lim ? 'ok' : (lim > 0 && v <= lim * 1.25) ? 'watch' : 'fail';
+}
+const PILL = { ok: 'Pass', watch: 'Watch', fail: 'Fail', none: 'Recorded', '': '' };
+const pill = s => s ? `<span class="pill ${s}">${PILL[s]}</span>` : '<span class="pill none">—</span>';
+
+// Build the record tables in each test.
+$$('.rec').forEach(box => {
+  const rows = M.filter(m => m[1] === box.dataset.test).map(m => `<tr>
+    <td>${m[2]}${m[6] ? `<span class="sub">${m[6]}</span>` : ''}</td>
+    <td><span class="field"><input class="v" type="text" inputmode="decimal" data-k="v.${m[0]}" aria-label="${m[2].replace(/<[^>]+>/g, '')}"><span class="u">${m[3]}</span></span></td>
+    <td class="n">${tgt(m[4])}</td><td class="n">${m[5] || '—'}</td><td data-st="${m[0]}"></td></tr>`).join('');
+  box.innerHTML = `<div class="block"><span class="label">Record</span><div class="table-wrap"><table>
+    <thead><tr><th>Metric</th><th>Value</th><th>Target</th><th>Kestrel</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+});
+$('#pid-body').innerHTML = [1,2,3,4,5,6].map(r => `<tr><td class="n">${r}</td>${PIDCOLS.map(c =>
+  `<td><input type="text" inputmode="decimal" data-k="pid.${r}.${c}" aria-label="row ${r} ${c}"></td>`).join('')}</tr>`).join('');
+
+// Checklist keys by position inside their step.
+$$('section.step').forEach(sec => $$('.chk input', sec).forEach((c, i) => c.dataset.k = `c.${sec.id}.${i}`));
+
+// Bind every field to the store.
+function load() {
+  $$('[data-k]').forEach(el => {
+    const v = S[el.dataset.k];
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v ?? '';
+  });
+}
+document.addEventListener('input', e => {
+  const k = e.target.dataset && e.target.dataset.k;
+  if (!k) return;
+  S[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+  save(); refresh();
+});
+
+function refresh() {
+  M.forEach(m => { const c = $(`[data-st="${m[0]}"]`); if (c) c.innerHTML = pill(status(m)); });
+  // Per-step progress: ticks + filled numbers.
+  $$('section.step').forEach(sec => {
+    const items = $$('[data-k]', sec).filter(el => el.type === 'checkbox' || el.classList.contains('v'));
+    const done = items.filter(el => el.type === 'checkbox' ? el.checked : el.value.trim() !== '').length;
+    const p = $(`[data-p="${sec.id}"]`);
+    if (p && items.length) { p.textContent = `${done}/${items.length}`; p.parentElement.classList.toggle('done', done === items.length); }
+  });
+  const filled = M.filter(m => num('v.' + m[0]) !== null).length;
+  $('#bar-all').style.width = (100 * filled / M.length) + '%';
+  $('#txt-all').textContent = `${filled} of ${M.length} numbers recorded`;
+  // Scorecard.
+  const cnt = { ok: 0, watch: 0, fail: 0 };
+  $('#score-body').innerHTML = M.map(m => {
+    const s = status(m); if (cnt[s] !== undefined) cnt[s]++;
+    const x = S['v.' + m[0]];
+    return `<tr><td class="n">${m[1].toUpperCase()}</td><td>${m[2]}${m[6] ? `<span class="sub">${m[6]}</span>` : ''}</td>
+      <td class="n">${tgt(m[4])} ${m[4] ? m[3] : ''}</td><td class="n">${m[5] ? m[5] + ' ' + m[3] : '—'}</td>
+      <td class="n">${x ? x + ' ' + m[3] : '—'}</td><td>${pill(s)}</td></tr>`;
+  }).join('');
+  $('#tally').innerHTML = `<span class="pill ok">${cnt.ok} pass</span><span class="pill watch">${cnt.watch} watch</span><span class="pill fail">${cnt.fail} fail</span><span class="small">${filled} of ${M.length} recorded</span>`;
+  // Derived Nav2 numbers.
+  const fl = num('v.floor_spin');
+  $('#d-floor').textContent = fl === null ? '—' : `≥ ${fl} rad/s`;
+  const duty = num('v.duty_arc');
+  if (duty) {
+    const cap = 0.525 * 90 / duty; // ponytail: linear duty→speed, ignores the FF start duty; slightly optimistic
+    $('#d-cap').textContent = `≈ ${cap.toFixed(2)} m/s`;
+    $('#d-cap-txt').textContent = `Keep v + 0.125·|ω| ≤ ${cap.toFixed(2)}: e.g. v ≤ ${Math.min(0.35, cap - 0.125).toFixed(2)} m/s at ω = 1 rad/s, v ≤ ${Math.min(0.35, cap).toFixed(2)} straight.`;
+  } else { $('#d-cap').textContent = '—'; }
+  const tw = num('v.twist');
+  $('#d-twist').textContent = tw === null ? '—' : `${tw > 0 ? '+' : ''}${tw} %`;
+  $('#d-twist-txt').textContent = tw === null ? 'MPPI and DWB seed predictions with this twist.' :
+    Math.abs(tw) <= 1 ? 'Good: controllers will see the speed you actually drive.' : 'Fix before tuning controllers: check the EKF yaw-rate fusion and the gyro scale (T6).';
+}
+
+// Copy buttons on code blocks.
+$$('pre').forEach(pre => {
+  const b = document.createElement('button'); b.className = 'copy'; b.textContent = 'copy';
+  b.onclick = () => navigator.clipboard.writeText($('code', pre).innerText).then(() => { b.textContent = 'copied'; setTimeout(() => b.textContent = 'copy', 1200); });
+  pre.append(b);
+});
+// Single-line commands inside checklist items: click the code to copy it.
+$$('.chk code').forEach(c => { c.title = 'Click to copy'; c.style.cursor = 'copy';
+  c.addEventListener('click', e => { e.preventDefault(); navigator.clipboard.writeText(c.innerText); }); });
+
+// Export / import / markdown / reset.
+const stamp = () => `${(S['m.mcu'] || 'mcu').replace(/\W+/g, '_')}_${S['m.date'] || new Date().toISOString().slice(0, 10)}`;
+$('#b-export').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }));
+  a.download = `bench_${stamp()}.json`; a.click();
+};
+$('#b-import').onclick = () => $('#f-import').click();
+$('#f-import').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then(t => { try { S = JSON.parse(t); save(); load(); refresh(); } catch (err) { alert('Not a bench JSON file.'); } });
+};
+$('#b-md').onclick = () => {
+  const strip = s => s.replace(/<[^>]+>/g, '');
+  const lines = [`**${S['m.mcu'] || 'MCU'}** · fw ${S['m.fw'] || '?'} · ${S['m.date'] || ''} · gains ${S['m.gains'] || '?'}`, '',
+    '| Test | Metric | Target | Kestrel | This run | Status |', '|---|---|---|---|---|---|',
+    ...M.map(m => `| ${m[1].toUpperCase()} | ${strip(m[2])} | ${tgt(m[4])} ${m[4] ? m[3] : ''} | ${m[5] || '—'} | ${S['v.' + m[0]] || '—'} ${S['v.' + m[0]] ? m[3] : ''} | ${PILL[status(m)] || '—'} |`)];
+  navigator.clipboard.writeText(lines.join('\n')).then(() => { $('#b-md').textContent = 'Copied'; setTimeout(() => $('#b-md').textContent = 'Copy table', 1200); });
+};
+$('#b-reset').onclick = () => { if (confirm('Clear every tick and number on this page? Export first if you want to keep them.')) { S = {}; save(); load(); refresh(); } };
+
+// Highlight the current step in the rail.
+const links = new Map($$('#railnav a').map(a => [a.getAttribute('href').slice(1), a]));
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  links.forEach(a => a.classList.remove('on'));
+  const a = links.get(e.target.id); if (a) a.classList.add('on');
+}), { rootMargin: '-10% 0px -80% 0px' });
+$$('section.step').forEach(sec => io.observe(sec));
+
+// Screenshot slots: a missing file shows its expected name.
+$$('figure.shot img').forEach(img => {
+  const miss = () => img.closest('figure').classList.add('missing');
+  if (img.complete && !img.naturalWidth) miss(); else img.addEventListener('error', miss);
+});
+
+load(); refresh();
+</script>
+</body>
+</html>
