@@ -1,6 +1,11 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, RegisterEventHandler
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    RegisterEventHandler,
+)
 from launch.event_handlers import OnProcessExit
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     Command,
     FindExecutable,
@@ -41,14 +46,14 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             'serial_port',
-            default_value='/dev/ttyUSB0',
-            description='Serial port for the robot.',
+            default_value='/dev/ttyACM0',
+            description='Serial port of the Kestrel base.',
         )
     )
     declared_arguments.append(
         DeclareLaunchArgument(
             'baud_rate',
-            default_value='57600',
+            default_value='115200',
             description='Baud rate for the serial communication with the robot.',
         )
     )
@@ -104,7 +109,15 @@ def generate_launch_description():
         package='controller_manager',
         executable='ros2_control_node',
         parameters=[{'use_sim_time': use_sim_time}, robot_controllers_config],
-        arguments=['--ros-args', '--log-level', log_level],
+        # TODO: drop the base-controller override once diff_drive_controller > 4.42.1
+        # stops warning every 1 s on cmd_vel timeout.
+        arguments=[
+            '--ros-args',
+            '--log-level',
+            log_level,
+            '--log-level',
+            'my_diffbot_base_controller:=error',
+        ],
         output='both',
     )
 
@@ -126,6 +139,25 @@ def generate_launch_description():
     #     parameters=[{'use_sim_time': use_sim_time}],
     # )
 
+    # IMU from the Kestrel base, published where the EKF reads it.
+    imu_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            'imu_broadcaster',
+            '--controller-ros-args',
+            '-r /imu_broadcaster/imu:=/imu/data',
+        ],
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+
+    gpio_controller_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['led_controller', 'kestrel_tuning_controller'],
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+
     robot_controller_spawner = Node(
         package='controller_manager',
         executable='spawner',
@@ -133,8 +165,6 @@ def generate_launch_description():
             'my_diffbot_base_controller',
             '--controller-ros-args',
             '-r /my_diffbot_base_controller/cmd_vel:=/cmd_vel',
-            '--controller-ros-args',
-            '-r /my_diffbot_base_controller/odom:=/odom',
             '-p',
             robot_controllers_config,
         ],
@@ -151,12 +181,31 @@ def generate_launch_description():
         )
     )
 
+    # EKF: the only publisher of /odom and odom -> base_footprint (diff_drive's TF is off)
+    ekf_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare('my_diffbot_localization'),
+                        'launch',
+                        'my_diffbot_ekf_localization.launch.py',
+                    ]
+                )
+            ]
+        ),
+        launch_arguments={'use_sim_time': use_sim_time}.items(),
+    )
+
     nodes = [
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
+        imu_broadcaster_spawner,
+        gpio_controller_spawner,
         # range_sensor_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
+        ekf_launch,
     ]
 
     return LaunchDescription(declared_arguments + nodes)

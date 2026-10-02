@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CycloneDDS config for the robot over WiFi.
+
+  - Pin DDS to the WiFi interface (override with CYCLONE_IFACE=eth0 for a
+    tethered session); without this Cyclone picks eth0 whenever the cable is
+    plugged in at boot and the robot disappears once it is pulled.
+  - Multicast only for discovery (SPDP). WiFi sends multicast at the lowest
+    basic rate with no retries, so user data must stay unicast even when a
+    topic has several remote readers.
+-->
+<CycloneDDS xmlns="https://cdds.io/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/releases/0.10.x/etc/cyclonedds.xsd">
+  <Domain Id="any">
+    <General>
+      <Interfaces>
+        <NetworkInterface name="${CYCLONE_IFACE:-wlan0}" presence_required="false"/>
+      </Interfaces>
+      <AllowMulticast>spdp</AllowMulticast>
+    </General>
+  </Domain>
+</CycloneDDS>

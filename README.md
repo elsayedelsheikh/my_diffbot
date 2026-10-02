@@ -8,21 +8,21 @@ A personal ROS 2 differential drive robot platform used to develop and test Nav2
 my_diffbot/
 ├── my_diffbot_bringup/            # Launch files, controller configs, top-level bring-up
 ├── my_diffbot_description/        # URDF/Xacro robot model, meshes, RViz configs
-├── my_diffbot_hardware_interface/ # ros2_control hardware interface (serial MCU)
+├── my_diffbot_hardware_interface/ # ros2_control hardware interface (Kestrel ESP32-S3 base)
 ├── my_diffbot_localization/       # EKF localization config (robot_localization)
 ├── docker/                        # Dockerfile (base + overlay stages)
 ├── docker-compose.yaml            # Development container services
-├── dependencies.repos             # External repos (ldlidar_stl_ros2, bno055)
+├── dependencies.repos             # External repos (ldlidar_stl_ros2)
 └── scripts/                       # udev rules and helper scripts
 ```
 
 ## Key Features
 
 **Hardware**
-- Differential drive chassis — wheel radius 31 mm, wheel separation 160 mm
-- MCU over serial (`/dev/ttyUSB0`, 57600 baud) with quadrature encoders (500 counts/rev)
+- Differential drive chassis — wheel radius 30 mm, wheel separation 255 mm (centre to centre)
+- Kestrel ESP32-S3 base over native USB (`/dev/ttyACM0`, binary protocol): L298N motor driver,
+  hall encoders (515 counts/rev), on-board PID, and a BNO055 9-DOF IMU fused on the MCU
 - LD06 360° LIDAR, 8 m range — Jetson UART (`/dev/ttyTHS1`, 230400 baud)
-- BNO055 9-DOF IMU
 
 **Software**
 - ROS2 with ros2_control, robot_localization (EKF), Nav2, and SLAM Toolbox
@@ -36,17 +36,26 @@ my_diffbot/
 
 ## Device Permissions
 
-Apply the udev rule for the LIDAR so its serial port gets a stable symlink:
+Apply the udev rules on the host so the LIDAR gets a stable symlink (`/dev/lidar`) and the
+Kestrel base (`/dev/ttyACM0`) is accessible to the `dialout` group:
 
 ```bash
-sudo cp scripts/97-ldlidar.rules /etc/udev/rules.d/
+sudo cp scripts/97-ldlidar.rules scripts/99-kestrel.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
-Or grant temporary access directly:
+The `dev` container mounts the live `/dev`, so the devices survive a replug or an ESP32 reset.
+
+## WiFi Watchdog
+
+One failed WPA handshake makes NetworkManager block autoconnect for the WiFi profile (there is no
+secret agent on the headless Jetson). A timer re-activates it when `wlan0` sits disconnected with the
+network in range (override `WIFI_IFACE` / `WIFI_CON` in the service if needed):
 
 ```bash
-sudo chmod 666 /dev/ttyUSB0 /dev/ttyTHS1 /dev/i2c-1
+sudo install -m 755 scripts/wifi-watchdog/wifi-watchdog.sh /usr/local/bin/wifi-watchdog
+sudo cp scripts/wifi-watchdog/wifi-watchdog.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now wifi-watchdog.timer
 ```
 
 ## Build
@@ -74,16 +83,15 @@ Key arguments:
 | Argument | Default | Description |
 |---|---|---|
 | `use_sim_time` | `false` | Use simulation clock |
-| `use_imu` | `false` | Enable BNO055 IMU |
-| `mcu_serial_port` | `/dev/ttyUSB0` | MCU serial port |
-| `mcu_baud_rate` | `57600` | MCU baud rate |
+| `mcu_serial_port` | `/dev/ttyACM0` | Kestrel serial port |
+| `mcu_baud_rate` | `115200` | Kestrel baud rate (ignored by the USB CDC link) |
 | `lidar_serial_port` | `/dev/ttyTHS1` | LIDAR serial port |
 
-Example with IMU enabled:
-
-```bash
-ros2 launch my_diffbot_bringup bringup_robot.launch.py use_imu:=true
-```
+The IMU is published on `/imu/data` (`imu_broadcaster`), with calibration, temperature and
+staleness on `/diagnostics`. The EKF (`robot_localization`) always runs: it fuses
+`/my_diffbot_base_controller/odom` with `/imu/data`, publishes `/odom`, and owns the
+`odom -> base_footprint` TF (diff_drive's own TF is disabled). It is started by
+`robot_controllers.launch.py`, so it runs with the controllers on their own too.
 
 ## Navigation and SLAM
 
@@ -102,6 +110,27 @@ Visualize with RViz:
 ```bash
 rviz2 -d /home/sayed/Projects/nav2_ws/src/navigation2/nav2_bringup/rviz/nav2_default_view.rviz
 ```
+
+## Kestrel Base
+
+The hardware interface talks to the Kestrel ESP32-S3 firmware over its binary
+serial protocol. PID gains (x1000) and the motor watchdog are URDF params,
+pushed on activation. Two gpio controllers are exposed at runtime:
+
+```bash
+# Onboard RGB LED: led_mode 0 off, 1 solid, 2 blink, 3 alternate; colours are 0xRRGGBB
+# (65280 = 0x00FF00: green, blinking every 500 ms)
+ros2 topic pub --once /led_controller/commands control_msgs/msg/DynamicInterfaceGroupValues \
+  "{interface_groups: [led], interface_values: [{interface_names: [led_mode, led_color, led_color_alt, led_period_ms], values: [2, 65280, 0, 500]}]}"
+
+# Live PID re-tune (kp=1.5, ki=3.0 per wheel, the defaults); sent to the MCU only when a value changes
+ros2 topic pub --once /kestrel_tuning_controller/commands control_msgs/msg/DynamicInterfaceGroupValues \
+  "{interface_groups: [kestrel_pid], interface_values: [{interface_names: [kp_l, ki_l, kd_l, kp_r, ki_r, kd_r], values: [1500, 3000, 0, 1500, 3000, 0]}]}"
+```
+
+Wheel target/measured/firmware velocity (mrps) and PWM duty (‰) are registered
+with ros2_control introspection (`left_wheel.target_velocity`, `left_wheel.pwm`, …)
+for tuning plots.
 
 ## Teleoperation
 
@@ -136,4 +165,3 @@ docker compose run --rm overlay bash
 Managed via `dependencies.repos` and imported with `vcs`:
 
 - **ldlidar_stl_ros2** — LD06 driver (forked at `elsayedelsheikh/ldlidar_stl_ros2`)
-- **bno055** — BNO055 IMU driver (`flynneva/bno055`)

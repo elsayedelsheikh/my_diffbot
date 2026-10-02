@@ -3,8 +3,3 @@ repositories:
     type: git
     url: https://github.com/elsayedelsheikh/ldlidar_stl_ros2.git
     version: main
-
-  bno055:
-    type: git
-    url: https://github.com/flynneva/bno055.git
-    version: main

@@ -62,11 +62,15 @@ services:
       - ./.colcon/build/:/overlay_ws/build/:rw
       - ./.colcon/install/:/overlay_ws/install/:rw
       - ./.colcon/log/:/overlay_ws/log/:rw
-      # Mount Devices
-      - /dev/lidar:/dev/lidar:rw
+      # Live /dev so /dev/lidar and /dev/ttyACM0 survive a replug
+      # or an ESP32 reset; a bind of a missing symlink would create a directory.
+      - /dev:/dev:rw
+      - ./docker/cyclonedds.xml:/cyclonedds.xml:ro
     environment:
         ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
         RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+        CYCLONEDDS_URI: file:///cyclonedds.xml
+        CYCLONE_IFACE: ${CYCLONE_IFACE:-wlan0}
     user: root
     command: sleep infinity
 
@@ -76,7 +80,8 @@ services:
 
   robot-bringup:
     extends: dev
-    command: ros2 launch my_diffbot_bringup bringup_robot.launch.py
+    restart: unless-stopped          # preserves boot/restart behavior (with docker enabled)
+    command: ros2 launch my_diffbot_bringup bringup_robot.launch.py mcu_serial_port:=/dev/ttyACM0
 
   start-navigation:
     extends: dev
@@ -93,7 +98,3 @@ services:
   test-lidar:
     extends: dev
     command: ros2 launch my_diffbot_bringup lidar_bringup.launch.py
-
-  test-imu:
-    extends: dev
-    command: ros2 launch my_diffbot_bringup imu_bno055.launch.py

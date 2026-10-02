@@ -1,0 +1,5 @@
+# Kestrel ESP32-S3 base, native USB (TinyUSB CDC 303a:4001) on /dev/ttyACM0
+#
+# sudo cp scripts/99-kestrel.rules /etc/udev/rules.d/
+# sudo udevadm control --reload-rules && sudo udevadm trigger
+SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="4001", GROUP="dialout", MODE="0660"
