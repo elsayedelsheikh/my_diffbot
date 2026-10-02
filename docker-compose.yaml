@@ -65,9 +65,12 @@ services:
       # Live /dev so udev symlinks (/dev/lidar, /dev/roboauto) survive a replug
       # or an ESP32 reset; a bind of a missing symlink would create a directory.
       - /dev:/dev:rw
+      - ./docker/cyclonedds.xml:/cyclonedds.xml:ro
     environment:
         ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
         RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+        CYCLONEDDS_URI: file:///cyclonedds.xml
+        CYCLONE_IFACE: ${CYCLONE_IFACE:-wlan0}
     user: root
     command: sleep infinity
 
