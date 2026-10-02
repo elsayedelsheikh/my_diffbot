@@ -1,0 +1,3 @@
+[submodule "ultra-base-esp32s3"]
+	path = ultra-base-esp32s3
+	url = git@github.com:elsayedelsheikh/ultra-base-esp32s3.git
