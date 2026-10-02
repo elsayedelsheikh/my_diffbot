@@ -57,7 +57,7 @@ services:
       - ./merlin_description:/overlay_ws/src/merlin_description:rw
       - ./merlin_hardware_interface:/overlay_ws/src/merlin_hardware_interface:rw
       - ./merlin_localization:/overlay_ws/src/merlin_localization:rw
-      # - ./merlin_navigation:/overlay_ws/src/merlin_navigation:rw
+      - ./merlin_navigation:/overlay_ws/src/merlin_navigation:rw
       # Mount colcon build artifacts for faster rebuilds
       - ./.colcon/build/:/overlay_ws/build/:rw
       - ./.colcon/install/:/overlay_ws/install/:rw
@@ -83,9 +83,17 @@ services:
     restart: unless-stopped          # preserves boot/restart behavior (with docker enabled)
     command: ros2 launch merlin_bringup bringup_robot.launch.py mcu_serial_port:=/dev/ttyACM0
 
-  start-navigation:
+  # Mapping: run with robot-bringup, drive with teleop, then save from any shell:
+  #   ros2 run nav2_map_server map_saver_cli -f /overlay_ws/src/merlin_navigation/maps/<name>
+  slam:
     extends: dev
-    command: ros2 launch merlin_navigation nav_bringup_launch.py
+    command: ros2 launch merlin_navigation slam.launch.py
+
+  # Navigate on the live slam map (alongside `slam`), or on a saved map with AMCL:
+  #   MAP=/overlay_ws/src/merlin_navigation/maps/<name>.yaml docker compose up navigation
+  navigation:
+    extends: dev
+    command: ros2 launch merlin_navigation navigation.launch.py map:=${MAP:-}
 
   teleop-keyboard:
     extends: dev

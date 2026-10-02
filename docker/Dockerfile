@@ -26,6 +26,21 @@ RUN apt-get update \
       ros-${ROS_DISTRO}-imu-sensor-broadcaster \
       ros-${ROS_DISTRO}-gpio-controllers \
       ros-${ROS_DISTRO}-robot-localization \
+      ros-${ROS_DISTRO}-nav2-amcl \
+      ros-${ROS_DISTRO}-nav2-behaviors \
+      ros-${ROS_DISTRO}-nav2-bt-navigator \
+      ros-${ROS_DISTRO}-nav2-collision-monitor \
+      ros-${ROS_DISTRO}-nav2-controller \
+      ros-${ROS_DISTRO}-nav2-lifecycle-manager \
+      ros-${ROS_DISTRO}-nav2-map-server \
+      ros-${ROS_DISTRO}-nav2-navfn-planner \
+      ros-${ROS_DISTRO}-nav2-planner \
+      ros-${ROS_DISTRO}-nav2-regulated-pure-pursuit-controller \
+      ros-${ROS_DISTRO}-nav2-smoother \
+      ros-${ROS_DISTRO}-nav2-velocity-smoother \
+      ros-${ROS_DISTRO}-nav2-waypoint-follower \
+      ros-${ROS_DISTRO}-rclcpp-components \
+      ros-${ROS_DISTRO}-slam-toolbox \
    # Clean up
    && apt-get autoremove -y \
    && apt-get clean -y \
@@ -68,7 +83,7 @@ COPY ./merlin_bringup/ ./src/merlin_bringup/
 COPY ./merlin_description/ ./src/merlin_description/
 COPY ./merlin_hardware_interface/ ./src/merlin_hardware_interface/
 COPY ./merlin_localization/ ./src/merlin_localization/
-#COPY ./merlin_navigation/ ./src/merlin_navigation/
+COPY ./merlin_navigation/ ./src/merlin_navigation/
 RUN source /base_ws/install/setup.bash \
  && apt-get update -y \
  && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -r -y \

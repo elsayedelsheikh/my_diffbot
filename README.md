@@ -10,10 +10,11 @@ my_diffbot/
 ├── merlin_description/        # URDF/Xacro robot model, meshes, RViz configs
 ├── merlin_hardware_interface/ # ros2_control hardware interface (Kestrel ESP32-S3 base)
 ├── merlin_localization/       # EKF localization config (robot_localization)
-├── docker/                        # Dockerfile (base + overlay stages)
-├── docker-compose.yaml            # Development container services
-├── dependencies.repos             # External repos (ldlidar_stl_ros2)
-└── scripts/                       # udev rules and helper scripts
+├── merlin_navigation/         # Nav2 + slam_toolbox params and thin launch wrappers
+├── docker/                    # Dockerfile (base + overlay stages)
+├── docker-compose.yaml        # Development container services
+├── dependencies.repos         # External repos (ldlidar_stl_ros2)
+└── scripts/                   # udev rules and helper scripts
 ```
 
 ## Key Features
@@ -95,21 +96,29 @@ staleness on `/diagnostics`. The EKF (`robot_localization`) always runs: it fuse
 
 ## Navigation and SLAM
 
-Navigation uses [nav2_bringup](https://github.com/ros-navigation/navigation2) directly — no custom nav package needed.
+`merlin_navigation` owns the params (copied from upstream Jazzy, then tuned for Merlin). `slam.launch.py`
+includes `slam_toolbox/online_async_launch.py`; `navigation.launch.py` mirrors nav2_bringup's composed bringup
+without depending on `nav2_bringup`/`navigation2`, which pull RViz and Gazebo onto the headless Jetson.
+Everything runs on the Jetson, next to `robot-bringup`. The dev machine visualizes and sends goals:
 
 ```bash
-ros2 launch nav2_bringup bringup_launch.py \
-  slam:=True \
-  use_sim_time:=false \
-  use_keepout_zones:=False \
-  use_speed_zones:=False
+rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/rviz/nav2_default_view.rviz
 ```
-
-Visualize with RViz:
 
 ```bash
-rviz2 -d /home/sayed/Projects/nav2_ws/src/navigation2/nav2_bringup/rviz/nav2_default_view.rviz
+# Map: drive around with teleop, then save
+ros2 launch merlin_navigation slam.launch.py
+ros2 run nav2_map_server map_saver_cli -f merlin_navigation/maps/<name>
+
+# Navigate while mapping (alongside slam.launch.py)
+ros2 launch merlin_navigation navigation.launch.py
+
+# Navigate on a saved map with AMCL
+ros2 launch merlin_navigation navigation.launch.py map:=<path>/maps/<name>.yaml
 ```
+
+The same through Docker: `docker compose up slam` and
+`MAP=/overlay_ws/src/merlin_navigation/maps/<name>.yaml docker compose up navigation`.
 
 ## Kestrel Base
 
