@@ -3,8 +3,8 @@
  *
  * Author: ElSayed ElSheikh
  */
-#ifndef MY_DIFFBOT_HARDWARE_INTERFACE__ROBOAUTO_TRANSPORT_HPP_
-#define MY_DIFFBOT_HARDWARE_INTERFACE__ROBOAUTO_TRANSPORT_HPP_
+#ifndef MY_DIFFBOT_HARDWARE_INTERFACE__KESTREL_TRANSPORT_HPP_
+#define MY_DIFFBOT_HARDWARE_INTERFACE__KESTREL_TRANSPORT_HPP_
 
 #include <atomic>
 #include <cstdint>
@@ -18,15 +18,15 @@ namespace my_diffbot_hardware_interface
 {
 
 // ============================================================================
-/// @brief Serial driver for the RoboAuto differential-drive base (ESP32-S3).
+/// @brief Serial driver for the Kestrel differential-drive base (ESP32-S3).
 ///
 /// The firmware is stateless: every command acts in any state, so the host
 /// sends each one without a lifecycle guard.
 // ============================================================================
-class RoboAuto : public SerialTransport
+class Kestrel : public SerialTransport
 {
 public:
-  RoboAuto() = default;
+  Kestrel() = default;
 
   // ── Commands ───────────────────────────────────────────────────────────────
 
@@ -134,4 +134,4 @@ private:
 
 }  // namespace my_diffbot_hardware_interface
 
-#endif  // MY_DIFFBOT_HARDWARE_INTERFACE__ROBOAUTO_TRANSPORT_HPP_
+#endif  // MY_DIFFBOT_HARDWARE_INTERFACE__KESTREL_TRANSPORT_HPP_

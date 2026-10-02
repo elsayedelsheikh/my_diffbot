@@ -20,14 +20,14 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'mcu_serial_port',
             default_value='/dev/ttyACM0',
-            description='Serial port for RoboAuto communication.',
+            description='Serial port for Kestrel communication.',
         )
     )
     declared_arguments.append(
         DeclareLaunchArgument(
             'mcu_baud_rate',
             default_value='115200',
-            description='Baud rate for RoboAuto communication.',
+            description='Baud rate for Kestrel communication.',
         )
     )
     declared_arguments.append(

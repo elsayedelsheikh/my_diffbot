@@ -4,7 +4,7 @@
  * Author: ElSayed ElSheikh
  */
 
-#include "my_diffbot_hardware_interface/roboauto_transport.hpp"
+#include "my_diffbot_hardware_interface/kestrel_transport.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -18,7 +18,7 @@ namespace my_diffbot_hardware_interface
 // Internal helpers
 // ============================================================================
 
-void RoboAuto::GetTimestamp(uint32_t & sec, uint32_t & nsec)
+void Kestrel::GetTimestamp(uint32_t & sec, uint32_t & nsec)
 {
   const auto now = std::chrono::system_clock::now().time_since_epoch();
   const auto secs = std::chrono::duration_cast<std::chrono::seconds>(now);
@@ -27,7 +27,7 @@ void RoboAuto::GetTimestamp(uint32_t & sec, uint32_t & nsec)
   nsec = static_cast<uint32_t>(nsecs.count());
 }
 
-AckStatus RoboAuto::SendTimestampCommand(uint8_t msg_id)
+AckStatus Kestrel::SendTimestampCommand(uint8_t msg_id)
 {
   TimestampPayload p{};
   GetTimestamp(p.timestamp_sec, p.timestamp_nsec);
@@ -39,16 +39,16 @@ AckStatus RoboAuto::SendTimestampCommand(uint8_t msg_id)
   return WaitForAck(msg_id);
 }
 
-void RoboAuto::OnConfigure()
+void Kestrel::OnConfigure()
 {
-  logger_ = rclcpp::get_logger("RoboAuto");
+  logger_ = rclcpp::get_logger("Kestrel");
 }
 
 // ============================================================================
 // Commands
 // ============================================================================
 
-AckStatus RoboAuto::Handshake()
+AckStatus Kestrel::Handshake()
 {
   HandshakePayload p{};
   GetTimestamp(p.timestamp_sec, p.timestamp_nsec);
@@ -65,7 +65,7 @@ AckStatus RoboAuto::Handshake()
   return status;
 }
 
-AckStatus RoboAuto::SetPIDGains(
+AckStatus Kestrel::SetPIDGains(
   int32_t kp_l, int32_t ki_l, int32_t kd_l,
   int32_t kp_r, int32_t ki_r, int32_t kd_r,
   uint32_t ack_timeout_ms)
@@ -86,7 +86,7 @@ AckStatus RoboAuto::SetPIDGains(
   return WaitForAck(MSG_ID::SET_PID_GAINS, ack_timeout_ms);
 }
 
-AckStatus RoboAuto::SetCommandTimeout(uint16_t timeout_ms, uint32_t ack_timeout_ms)
+AckStatus Kestrel::SetCommandTimeout(uint16_t timeout_ms, uint32_t ack_timeout_ms)
 {
   SetCommandTimeoutPayload p{};
   GetTimestamp(p.timestamp_sec, p.timestamp_nsec);
@@ -99,17 +99,17 @@ AckStatus RoboAuto::SetCommandTimeout(uint16_t timeout_ms, uint32_t ack_timeout_
   return WaitForAck(MSG_ID::SET_CMD_TIMEOUT, ack_timeout_ms);
 }
 
-AckStatus RoboAuto::Deactivate()
+AckStatus Kestrel::Deactivate()
 {
   return SendTimestampCommand(MSG_ID::DEACTIVATE);
 }
 
-AckStatus RoboAuto::Reset()
+AckStatus Kestrel::Reset()
 {
   return SendTimestampCommand(MSG_ID::RESET);
 }
 
-AckStatus RoboAuto::SetWheelVelocity(double left_rad_s, double right_rad_s)
+AckStatus Kestrel::SetWheelVelocity(double left_rad_s, double right_rad_s)
 {
   WheelVelocityPayload p{};
   GetTimestamp(p.timestamp_sec, p.timestamp_nsec);
@@ -123,7 +123,7 @@ AckStatus RoboAuto::SetWheelVelocity(double left_rad_s, double right_rad_s)
   return AckStatus::OK;  // No ACK for high-frequency wheel velocity command
 }
 
-AckStatus RoboAuto::SetRGBLED(uint8_t red, uint8_t green, uint8_t blue, uint8_t mode)
+AckStatus Kestrel::SetRGBLED(uint8_t red, uint8_t green, uint8_t blue, uint8_t mode)
 {
   RGBLEDSetPayload p{};
   GetTimestamp(p.timestamp_sec, p.timestamp_nsec);
@@ -143,7 +143,7 @@ AckStatus RoboAuto::SetRGBLED(uint8_t red, uint8_t green, uint8_t blue, uint8_t 
 // Feedback parsing
 // ============================================================================
 
-void RoboAuto::OnMessageReceived(uint8_t msg_id, const std::vector<uint8_t> & payload)
+void Kestrel::OnMessageReceived(uint8_t msg_id, const std::vector<uint8_t> & payload)
 {
   switch (msg_id) {
     case MSG_ID::WHEEL_FEEDBACK: {
@@ -244,7 +244,7 @@ void RoboAuto::OnMessageReceived(uint8_t msg_id, const std::vector<uint8_t> & pa
 // Data accessors
 // ============================================================================
 
-RoboAuto::WheelFeedbackSnapshot RoboAuto::GetWheelFeedbackSnapshot() const
+Kestrel::WheelFeedbackSnapshot Kestrel::GetWheelFeedbackSnapshot() const
 {
   WheelFeedbackSnapshot s;
   s.count = wheel_feedback_count_;

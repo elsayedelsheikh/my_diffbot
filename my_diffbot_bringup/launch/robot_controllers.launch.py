@@ -47,7 +47,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'serial_port',
             default_value='/dev/ttyACM0',
-            description='Serial port of the RoboAuto base.',
+            description='Serial port of the Kestrel base.',
         )
     )
     declared_arguments.append(
@@ -139,7 +139,7 @@ def generate_launch_description():
     #     parameters=[{'use_sim_time': use_sim_time}],
     # )
 
-    # IMU from the RoboAuto base, published where the EKF reads it.
+    # IMU from the Kestrel base, published where the EKF reads it.
     imu_broadcaster_spawner = Node(
         package='controller_manager',
         executable='spawner',
@@ -154,7 +154,7 @@ def generate_launch_description():
     gpio_controller_spawner = Node(
         package='controller_manager',
         executable='spawner',
-        arguments=['led_controller', 'roboauto_tuning_controller'],
+        arguments=['led_controller', 'kestrel_tuning_controller'],
         parameters=[{'use_sim_time': use_sim_time}],
     )
 

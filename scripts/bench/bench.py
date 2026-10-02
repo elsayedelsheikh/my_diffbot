@@ -459,11 +459,11 @@ class Bench(Node):
     def set_pid(self, kp, ki, kd=0.0):
         if not hasattr(self, 'pid_pub'):
             self.pid_pub = self.create_publisher(
-                DynamicInterfaceGroupValues, '/roboauto_tuning_controller/commands', 10
+                DynamicInterfaceGroupValues, '/kestrel_tuning_controller/commands', 10
             )
             time.sleep(0.5)
         m = DynamicInterfaceGroupValues()
-        m.interface_groups = ['roboauto_pid']
+        m.interface_groups = ['kestrel_pid']
         g = [kp * 1000, ki * 1000, kd * 1000]
         m.interface_values = [
             InterfaceValue(

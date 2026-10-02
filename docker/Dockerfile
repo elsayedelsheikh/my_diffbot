@@ -108,7 +108,7 @@ RUN groupadd --gid $GID $USERNAME \
 # Set the ownership of the overlay workspace to the new user
 RUN chown -R ${UID}:${GID} /overlay_ws/
 
-# Add user to dialout for the RoboAuto and LIDAR serial ports
+# Add user to dialout for the Kestrel and LIDAR serial ports
 RUN usermod -aG dialout ${USERNAME}
 
 # Set up the entrypoint, including it in the .bashrc for interactive shells

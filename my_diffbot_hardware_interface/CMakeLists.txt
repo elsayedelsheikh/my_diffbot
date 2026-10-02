@@ -34,7 +34,7 @@ set(library_name ${PROJECT_NAME})
 add_library(${library_name} SHARED
   src/binary_protocol.cpp
   src/serial_transport.cpp
-  src/roboauto_transport.cpp
+  src/kestrel_transport.cpp
   src/my_diffbot_system.cpp
 )
 target_compile_features(${library_name} PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17

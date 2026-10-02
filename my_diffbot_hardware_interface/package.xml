@@ -3,7 +3,7 @@
 <package format="3">
   <name>my_diffbot_hardware_interface</name>
   <version>0.0.0</version>
-  <description>ros2_control system interface for my_diffbot on the RoboAuto ESP32-S3 base (binary serial protocol).</description>
+  <description>ros2_control system interface for my_diffbot on the Kestrel ESP32-S3 base (binary serial protocol).</description>
   <maintainer email="elsayed.elsheikh97@gmail.com">sayed</maintainer>
   <license>TODO: License declaration</license>
 

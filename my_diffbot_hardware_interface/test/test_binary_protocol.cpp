@@ -2,7 +2,7 @@
  * Copyright (c) 2026 RoboLabs
  *
  * Unit tests for binary_protocol: crc16_ccitt, BuildFrame, ExtractFrame,
- * AckStatus codes, RoboAuto payload layouts, BNO055 scales and ResolveLed.
+ * AckStatus codes, Kestrel payload layouts, BNO055 scales and ResolveLed.
  */
 
 #include <gtest/gtest.h>
@@ -278,7 +278,7 @@ TEST(PayloadSizeTest, RGBLEDSetPayloadSize)
   EXPECT_EQ(sizeof(RGBLEDSetPayload), 12u);
 }
 
-TEST(HeartbeatTest, RoboAutoPayloadUnchanged)
+TEST(HeartbeatTest, KestrelPayloadUnchanged)
 {
   static_assert(sizeof(HeartbeatPayload) == 17, "HeartbeatPayload must be 17 bytes");
   EXPECT_EQ(sizeof(HeartbeatPayload), 17u);
@@ -341,7 +341,7 @@ TEST(Bno055ScaleTest, QuatRawIsUnitScaled)
 
 TEST(Bno055ScaleTest, EmulatorRestingFrameDecodesToLevelRobot)
 {
-  // Byte-for-byte the emulator's static resting frame (roboauto_device_emulator).
+  // Byte-for-byte the emulator's static resting frame (kestrel_device_emulator).
   IMUDataPayload p{};
   p.lin_ax = 0; p.lin_ay = 0; p.lin_az = 981;
   p.ang_vx = 0; p.ang_vy = 0; p.ang_vz = 16 * 2;   // 2 deg/s

@@ -27,7 +27,7 @@
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 
 #include "my_diffbot_hardware_interface/binary_protocol.hpp"
-#include "my_diffbot_hardware_interface/roboauto_transport.hpp"
+#include "my_diffbot_hardware_interface/kestrel_transport.hpp"
 
 namespace my_diffbot_hardware_interface
 {
@@ -67,7 +67,7 @@ private:
   void WriteTuning();
   void WriteLed(const rclcpp::Time & time);
 
-  RoboAuto roboauto_;
+  Kestrel kestrel_;
 
   // ── Config (read in on_init, applied in on_activate) ────────────────────────
   // Encoder ticks per wheel revolution; used by read() to convert ticks → rad.
@@ -77,7 +77,7 @@ private:
   int32_t kp_r_ = 1000, ki_r_ = 2000, kd_r_ = 0;
   // Motor command watchdog timeout (ms) forwarded via SetCommandTimeout().
   uint16_t cmd_timeout_ms_ = 250;
-  // Last values sent to the MCU via the roboauto_pid / roboauto_watchdog gpio
+  // Last values sent to the MCU via the kestrel_pid / kestrel_watchdog gpio
   // command interfaces — GpioCommandController re-writes its last message every
   // cycle, so write() only touches the serial port when a value changes.
   // Order: kp_l, ki_l, kd_l, kp_r, ki_r, kd_r.

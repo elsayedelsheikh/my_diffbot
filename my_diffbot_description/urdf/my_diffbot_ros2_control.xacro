@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <!-- RoboAuto ESP32-S3 base. PID gains are x1000 (1000 = 1.0). -->
+  <!-- Kestrel ESP32-S3 base. PID gains are x1000 (1000 = 1.0). -->
   <xacro:macro name="my_diffbot_ros2_control" params="
     name
     mock_hardware:=false
@@ -89,7 +89,7 @@
       </gpio>
       <!-- Runtime tuning: values are re-sent to the MCU only when they change;
            seeded from the kp_l/.../cmd_timeout_ms params. -->
-      <gpio name="roboauto_pid">
+      <gpio name="kestrel_pid">
         <command_interface name="kp_l"/>
         <command_interface name="ki_l"/>
         <command_interface name="kd_l"/>
@@ -97,7 +97,7 @@
         <command_interface name="ki_r"/>
         <command_interface name="kd_r"/>
       </gpio>
-      <gpio name="roboauto_watchdog">
+      <gpio name="kestrel_watchdog">
         <command_interface name="cmd_timeout_ms"/>
       </gpio>
     </ros2_control>

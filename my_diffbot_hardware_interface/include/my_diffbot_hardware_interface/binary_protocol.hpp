@@ -15,7 +15,7 @@ namespace my_diffbot_hardware_interface
 {
 
 // ============================================================================
-// Message ID Constants (RoboAuto subset; names match the firmware's messages.hpp)
+// Message ID Constants (Kestrel subset; names match the firmware's messages.hpp)
 // ============================================================================
 
 namespace MSG_ID
@@ -126,7 +126,7 @@ struct WheelFeedbackPayload     // 0x10 — 32 B
   int64_t  right_encoder_ticks;
   // Firmware-calculated wheel speed, UNSIGNED magnitude only (no direction
   // bit) — the host recovers the sign from the encoder tick deltas
-  // (see RoboAuto::OnMessageReceived).
+  // (see Kestrel::OnMessageReceived).
   uint32_t left_wheel_mrps;
   uint32_t right_wheel_mrps;
 };

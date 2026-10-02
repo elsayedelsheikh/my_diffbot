@@ -14,7 +14,7 @@ controller_manager:
     led_controller:
       type: gpio_controllers/GpioCommandController
 
-    roboauto_tuning_controller:
+    kestrel_tuning_controller:
       type: gpio_controllers/GpioCommandController
 
     # my_range_sensor_broadcaster:
@@ -85,13 +85,13 @@ led_controller:
           - led_period_ms
 
 # Live PID (x1000) and motor watchdog re-tuning; sent to the MCU only on change.
-roboauto_tuning_controller:
+kestrel_tuning_controller:
   ros__parameters:
     gpios:
-      - roboauto_pid
-      - roboauto_watchdog
+      - kestrel_pid
+      - kestrel_watchdog
     command_interfaces:
-      roboauto_pid:
+      kestrel_pid:
         - interfaces:
           - kp_l
           - ki_l
@@ -99,7 +99,7 @@ roboauto_tuning_controller:
           - kp_r
           - ki_r
           - kd_r
-      roboauto_watchdog:
+      kestrel_watchdog:
         - interfaces:
           - cmd_timeout_ms
 

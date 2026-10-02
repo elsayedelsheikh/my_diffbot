@@ -8,7 +8,7 @@ A personal ROS 2 differential drive robot platform used to develop and test Nav2
 my_diffbot/
 ├── my_diffbot_bringup/            # Launch files, controller configs, top-level bring-up
 ├── my_diffbot_description/        # URDF/Xacro robot model, meshes, RViz configs
-├── my_diffbot_hardware_interface/ # ros2_control hardware interface (RoboAuto ESP32-S3 base)
+├── my_diffbot_hardware_interface/ # ros2_control hardware interface (Kestrel ESP32-S3 base)
 ├── my_diffbot_localization/       # EKF localization config (robot_localization)
 ├── docker/                        # Dockerfile (base + overlay stages)
 ├── docker-compose.yaml            # Development container services
@@ -20,7 +20,7 @@ my_diffbot/
 
 **Hardware**
 - Differential drive chassis — wheel radius 30 mm, wheel separation 255 mm (centre to centre)
-- RoboAuto ESP32-S3 base over native USB (`/dev/ttyACM0`, binary protocol): L298N motor driver,
+- Kestrel ESP32-S3 base over native USB (`/dev/ttyACM0`, binary protocol): L298N motor driver,
   hall encoders (515 counts/rev), on-board PID, and a BNO055 9-DOF IMU fused on the MCU
 - LD06 360° LIDAR, 8 m range — Jetson UART (`/dev/ttyTHS1`, 230400 baud)
 
@@ -37,10 +37,10 @@ my_diffbot/
 ## Device Permissions
 
 Apply the udev rules on the host so the LIDAR gets a stable symlink (`/dev/lidar`) and the
-RoboAuto base (`/dev/ttyACM0`) is accessible to the `dialout` group:
+Kestrel base (`/dev/ttyACM0`) is accessible to the `dialout` group:
 
 ```bash
-sudo cp scripts/97-ldlidar.rules scripts/99-roboauto.rules /etc/udev/rules.d/
+sudo cp scripts/97-ldlidar.rules scripts/99-kestrel.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
@@ -83,8 +83,8 @@ Key arguments:
 | Argument | Default | Description |
 |---|---|---|
 | `use_sim_time` | `false` | Use simulation clock |
-| `mcu_serial_port` | `/dev/ttyACM0` | RoboAuto serial port |
-| `mcu_baud_rate` | `115200` | RoboAuto baud rate (ignored by the USB CDC link) |
+| `mcu_serial_port` | `/dev/ttyACM0` | Kestrel serial port |
+| `mcu_baud_rate` | `115200` | Kestrel baud rate (ignored by the USB CDC link) |
 | `lidar_serial_port` | `/dev/ttyTHS1` | LIDAR serial port |
 
 The IMU is published on `/imu/data` (`imu_broadcaster`), with calibration, temperature and
@@ -111,9 +111,9 @@ Visualize with RViz:
 rviz2 -d /home/sayed/Projects/nav2_ws/src/navigation2/nav2_bringup/rviz/nav2_default_view.rviz
 ```
 
-## RoboAuto Base
+## Kestrel Base
 
-The hardware interface talks to the RoboAuto ESP32-S3 firmware over its binary
+The hardware interface talks to the Kestrel ESP32-S3 firmware over its binary
 serial protocol. PID gains (x1000) and the motor watchdog are URDF params,
 pushed on activation. Two gpio controllers are exposed at runtime:
 
@@ -124,8 +124,8 @@ ros2 topic pub --once /led_controller/commands control_msgs/msg/DynamicInterface
   "{interface_groups: [led], interface_values: [{interface_names: [led_mode, led_color, led_color_alt, led_period_ms], values: [2, 65280, 0, 500]}]}"
 
 # Live PID re-tune (kp=1.5, ki=3.0 per wheel, the defaults); sent to the MCU only when a value changes
-ros2 topic pub --once /roboauto_tuning_controller/commands control_msgs/msg/DynamicInterfaceGroupValues \
-  "{interface_groups: [roboauto_pid], interface_values: [{interface_names: [kp_l, ki_l, kd_l, kp_r, ki_r, kd_r], values: [1500, 3000, 0, 1500, 3000, 0]}]}"
+ros2 topic pub --once /kestrel_tuning_controller/commands control_msgs/msg/DynamicInterfaceGroupValues \
+  "{interface_groups: [kestrel_pid], interface_values: [{interface_names: [kp_l, ki_l, kd_l, kp_r, ki_r, kd_r], values: [1500, 3000, 0, 1500, 3000, 0]}]}"
 ```
 
 Wheel target/measured/firmware velocity (mrps) and PWM duty (‰) are registered

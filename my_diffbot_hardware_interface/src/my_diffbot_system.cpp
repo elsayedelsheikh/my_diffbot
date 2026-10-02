@@ -58,19 +58,19 @@ constexpr std::array<const char *, 6> kGainOrder =
 
 // The ESP32 can still be booting (USB re-enumeration) when the controller
 // manager starts — retry before failing.
-bool HandshakeWithRetry(RoboAuto & board, const rclcpp::Logger & logger)
+bool HandshakeWithRetry(Kestrel & board, const rclcpp::Logger & logger)
 {
   constexpr int kMaxAttempts = 10;
   for (int attempt = 1; attempt <= kMaxAttempts; ++attempt) {
     if (board.Handshake() == AckStatus::OK) {
       return true;
     }
-    RCLCPP_WARN(logger, "RoboAuto: handshake attempt %d/%d failed", attempt, kMaxAttempts);
+    RCLCPP_WARN(logger, "Kestrel: handshake attempt %d/%d failed", attempt, kMaxAttempts);
     if (attempt < kMaxAttempts) {
       std::this_thread::sleep_for(std::chrono::seconds(1));
     }
   }
-  RCLCPP_ERROR(logger, "RoboAuto: handshake failed after %d attempts!", kMaxAttempts);
+  RCLCPP_ERROR(logger, "Kestrel: handshake failed after %d attempts!", kMaxAttempts);
   return false;
 }
 
@@ -160,8 +160,8 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_init(
   }
 
   // Configure the serial driver (does NOT open the port)
-  roboauto_.SetClock(get_clock());
-  roboauto_.Configure(serial_port, baud_rate, timeout_ms);
+  kestrel_.SetClock(get_clock());
+  kestrel_.Configure(serial_port, baud_rate, timeout_ms);
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
@@ -224,11 +224,11 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_activate(
     set_command(name, get_state(name));
   }
 
-  if (!roboauto_.Connect()) {
-    RCLCPP_ERROR(get_logger(), "RoboAuto: serial port failed to open!");
+  if (!kestrel_.Connect()) {
+    RCLCPP_ERROR(get_logger(), "Kestrel: serial port failed to open!");
     return hardware_interface::CallbackReturn::FAILURE;
   }
-  if (!HandshakeWithRetry(roboauto_, get_logger())) {
+  if (!HandshakeWithRetry(kestrel_, get_logger())) {
     return hardware_interface::CallbackReturn::FAILURE;
   }
 
@@ -246,16 +246,16 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_activate(
   sent_led_.reset();
 
   // Non-fatal on a missing ACK: a flaky ACK shouldn't kill bringup, and the
-  // roboauto_tuning_controller gpios can always re-send.
+  // kestrel_tuning_controller gpios can always re-send.
   RCLCPP_INFO(get_logger(),
-    "RoboAuto: sending PID gains L(%d, %d, %d) R(%d, %d, %d)",
+    "Kestrel: sending PID gains L(%d, %d, %d) R(%d, %d, %d)",
     kp_l_, ki_l_, kd_l_, kp_r_, ki_r_, kd_r_);
-  if (roboauto_.SetPIDGains(kp_l_, ki_l_, kd_l_, kp_r_, ki_r_, kd_r_) != AckStatus::OK) {
-    RCLCPP_ERROR(get_logger(), "RoboAuto: SetPIDGains not acknowledged!");
+  if (kestrel_.SetPIDGains(kp_l_, ki_l_, kd_l_, kp_r_, ki_r_, kd_r_) != AckStatus::OK) {
+    RCLCPP_ERROR(get_logger(), "Kestrel: SetPIDGains not acknowledged!");
   }
-  RCLCPP_INFO(get_logger(), "RoboAuto: sending command timeout %u ms", cmd_timeout_ms_);
-  if (roboauto_.SetCommandTimeout(cmd_timeout_ms_) != AckStatus::OK) {
-    RCLCPP_ERROR(get_logger(), "RoboAuto: SetCommandTimeout not acknowledged!");
+  RCLCPP_INFO(get_logger(), "Kestrel: sending command timeout %u ms", cmd_timeout_ms_);
+  if (kestrel_.SetCommandTimeout(cmd_timeout_ms_) != AckStatus::OK) {
+    RCLCPP_ERROR(get_logger(), "Kestrel: SetCommandTimeout not acknowledged!");
   }
   sent_pid_gains_ = {
     static_cast<double>(kp_l_), static_cast<double>(ki_l_),
@@ -267,13 +267,13 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_activate(
   // configure-time zeroing nor the deactivate zeroing (or a stale runtime
   // retune) registers as a "change" on the first write().
   const std::array<std::pair<const char *, double>, 7> tuning_seeds = {{
-    {"roboauto_pid/kp_l", sent_pid_gains_[0]},
-    {"roboauto_pid/ki_l", sent_pid_gains_[1]},
-    {"roboauto_pid/kd_l", sent_pid_gains_[2]},
-    {"roboauto_pid/kp_r", sent_pid_gains_[3]},
-    {"roboauto_pid/ki_r", sent_pid_gains_[4]},
-    {"roboauto_pid/kd_r", sent_pid_gains_[5]},
-    {"roboauto_watchdog/cmd_timeout_ms", sent_cmd_timeout_ms_},
+    {"kestrel_pid/kp_l", sent_pid_gains_[0]},
+    {"kestrel_pid/ki_l", sent_pid_gains_[1]},
+    {"kestrel_pid/kd_l", sent_pid_gains_[2]},
+    {"kestrel_pid/kp_r", sent_pid_gains_[3]},
+    {"kestrel_pid/ki_r", sent_pid_gains_[4]},
+    {"kestrel_pid/kd_r", sent_pid_gains_[5]},
+    {"kestrel_watchdog/cmd_timeout_ms", sent_cmd_timeout_ms_},
   }};
   for (const auto & [name, value] : tuning_seeds) {
     if (gpio_command_interfaces_.count(name) != 0) {
@@ -295,9 +295,9 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_deactivate(
     set_command(name, 0.0);
   }
 
-  roboauto_.SetWheelVelocity(0.0, 0.0);
-  roboauto_.Deactivate();
-  roboauto_.Reset();
+  kestrel_.SetWheelVelocity(0.0, 0.0);
+  kestrel_.Deactivate();
+  kestrel_.Reset();
 
   RCLCPP_INFO(get_logger(), "Successfully deactivated!");
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -320,7 +320,7 @@ hardware_interface::CallbackReturn My_diffbotSystemHardware::on_cleanup(
 
   diag_pub_.reset();
   diag_node_.reset();
-  roboauto_.Shutdown();
+  kestrel_.Shutdown();
 
   RCLCPP_INFO(get_logger(), "Successfully cleaned up!");
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -332,13 +332,13 @@ My_diffbotSystemHardware::read(
   const rclcpp::Time & /* time */,
   const rclcpp::Duration & period)
 {
-  if (!roboauto_.IsOpen()) {
-    RCLCPP_ERROR(get_logger(), "Can't connect to RoboAuto; serial port is not open!");
+  if (!kestrel_.IsOpen()) {
+    RCLCPP_ERROR(get_logger(), "Can't connect to Kestrel; serial port is not open!");
     return hardware_interface::return_type::ERROR;
   }
 
   // Drain the RX buffer and parse any new frames.
-  roboauto_.Read();
+  kestrel_.Read();
 
   // The led state interfaces mirror their commands.
   for (const auto & [name, descr] : gpio_command_interfaces_) {
@@ -369,7 +369,7 @@ void My_diffbotSystemHardware::ReadImu(
 {
   // Feed the bno055_imu sensor state interfaces (consumed by
   // imu_sensor_broadcaster → /imu/data → EKF). Quat order in the snapshot is w,x,y,z.
-  const auto imu = roboauto_.GetIMUSnapshot();
+  const auto imu = kestrel_.GetIMUSnapshot();
   for (const auto &[name, descr] : sensor_state_interfaces_) {
     if (descr.get_prefix_name() != "bno055_imu") {
       continue;
@@ -410,8 +410,8 @@ void My_diffbotSystemHardware::ReadImu(
   const bool stale = (get_clock()->now() - last_imu_count_change_).seconds() > 0.5;
   DiagnosticStatus status;
   status.name = "my_diffbot/imu: BNO055";
-  status.hardware_id = "roboauto";
-  if (!roboauto_.GetImuHealthy() || stale) {
+  status.hardware_id = "kestrel";
+  if (!kestrel_.GetImuHealthy() || stale) {
     status.level = DiagnosticStatus::ERROR;
     status.message = stale ? "IMU data stale (no frames > 0.5 s)" : "MCU reports IMU unhealthy";
   } else if (imu.cal[0] >= 2) {
@@ -437,13 +437,13 @@ void My_diffbotSystemHardware::ReadImu(
 
 void My_diffbotSystemHardware::ReadWheels(const rclcpp::Duration & /* period */)
 {
-  const auto feedback = roboauto_.GetWheelFeedbackSnapshot();
+  const auto feedback = kestrel_.GetWheelFeedbackSnapshot();
 
   // Introspection only: firmware speed (signed by the transport) and PWM duty.
   left_wheel_firmware_velocity_ = feedback.left_mrps;
   right_wheel_firmware_velocity_ = feedback.right_mrps;
-  left_wheel_pwm_ = roboauto_.GetLeftDutyPermille();
-  right_wheel_pwm_ = roboauto_.GetRightDutyPermille();
+  left_wheel_pwm_ = kestrel_.GetLeftDutyPermille();
+  right_wheel_pwm_ = kestrel_.GetRightDutyPermille();
 
   // No WHEEL_FEEDBACK parsed yet.
   if (feedback.count == 0u) {
@@ -475,7 +475,7 @@ void My_diffbotSystemHardware::ReadWheels(const rclcpp::Duration & /* period */)
     wheel_feedback_stale_ = true;
     meas_rad_ = {0.0, 0.0};
     RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1000,
-      "RoboAuto: wheel feedback stale (no frames > %.1f s); reporting zero wheel velocity",
+      "Kestrel: wheel feedback stale (no frames > %.1f s); reporting zero wheel velocity",
       kWheelFeedbackTimeoutSec);
   }
 
@@ -536,8 +536,8 @@ My_diffbotSystemHardware::write(
   const rclcpp::Time & time,
   const rclcpp::Duration & /* period */)
 {
-  if (!roboauto_.IsOpen()) {
-    RCLCPP_ERROR(get_logger(), "Can't connect to RoboAuto; serial port is not open!");
+  if (!kestrel_.IsOpen()) {
+    RCLCPP_ERROR(get_logger(), "Can't connect to Kestrel; serial port is not open!");
     return hardware_interface::return_type::ERROR;
   }
 
@@ -572,7 +572,7 @@ My_diffbotSystemHardware::write(
   const bool in_stop_grace = (get_clock()->now() - last_active_time_).seconds() < 1.0;
 
   if (!stopped || in_stop_grace) {
-    if (roboauto_.SetWheelVelocity(left_cmd, right_cmd) != AckStatus::OK) {
+    if (kestrel_.SetWheelVelocity(left_cmd, right_cmd) != AckStatus::OK) {
       RCLCPP_ERROR(get_logger(),
           "Failed to send Motor commands: left=%.3f rad/s  right=%.3f rad/s",
           left_cmd, right_cmd);
@@ -595,13 +595,13 @@ void My_diffbotSystemHardware::WriteTuning()
   for (const auto & [name, descr] : gpio_command_interfaces_) {
     const std::string prefix = descr.get_prefix_name();
     const std::string iface = descr.get_interface_name();
-    if (prefix == "roboauto_pid") {
+    if (prefix == "kestrel_pid") {
       for (size_t i = 0; i < kGainOrder.size(); ++i) {
         if (iface == kGainOrder[i] && std::isfinite(get_command(name))) {
           pid_cmd[i] = get_command(name);
         }
       }
-    } else if (prefix == "roboauto_watchdog" && iface == "cmd_timeout_ms" &&
+    } else if (prefix == "kestrel_watchdog" && iface == "cmd_timeout_ms" &&
       std::isfinite(get_command(name)))
     {
       timeout_cmd = get_command(name);
@@ -613,22 +613,22 @@ void My_diffbotSystemHardware::WriteTuning()
     for (size_t i = 0; i < gains.size(); ++i) {
       gains[i] = ClampCast<int32_t>(pid_cmd[i]);
     }
-    RCLCPP_INFO(get_logger(), "RoboAuto: re-tuning PID gains L(%d, %d, %d) R(%d, %d, %d)",
+    RCLCPP_INFO(get_logger(), "Kestrel: re-tuning PID gains L(%d, %d, %d) R(%d, %d, %d)",
       gains[0], gains[1], gains[2], gains[3], gains[4], gains[5]);
-    if (roboauto_.SetPIDGains(
+    if (kestrel_.SetPIDGains(
         gains[0], gains[1], gains[2], gains[3], gains[4], gains[5],
         kRuntimeAckTimeoutMs) != AckStatus::OK)
     {
-      RCLCPP_ERROR(get_logger(), "RoboAuto: SetPIDGains not acknowledged!");
+      RCLCPP_ERROR(get_logger(), "Kestrel: SetPIDGains not acknowledged!");
     }
     sent_pid_gains_ = pid_cmd;
   }
 
   if (timeout_cmd != sent_cmd_timeout_ms_) {
     const auto timeout_ms = ClampCast<uint16_t>(timeout_cmd);
-    RCLCPP_INFO(get_logger(), "RoboAuto: setting command timeout %u ms", timeout_ms);
-    if (roboauto_.SetCommandTimeout(timeout_ms, kRuntimeAckTimeoutMs) != AckStatus::OK) {
-      RCLCPP_ERROR(get_logger(), "RoboAuto: SetCommandTimeout not acknowledged!");
+    RCLCPP_INFO(get_logger(), "Kestrel: setting command timeout %u ms", timeout_ms);
+    if (kestrel_.SetCommandTimeout(timeout_ms, kRuntimeAckTimeoutMs) != AckStatus::OK) {
+      RCLCPP_ERROR(get_logger(), "Kestrel: SetCommandTimeout not acknowledged!");
     }
     sent_cmd_timeout_ms_ = timeout_cmd;
   }
@@ -658,7 +658,7 @@ void My_diffbotSystemHardware::WriteLed(const rclcpp::Time & time)
   }
   RCLCPP_DEBUG(get_logger(), "[LED] mode=%d rgb=%02X%02X%02X",
     led_mode, led->r, led->g, led->b);
-  roboauto_.SetRGBLED(led->r, led->g, led->b, led->fw_mode);
+  kestrel_.SetRGBLED(led->r, led->g, led->b, led->fw_mode);
   sent_led_ = led;
   last_led_send_ = get_clock()->now();
 }
