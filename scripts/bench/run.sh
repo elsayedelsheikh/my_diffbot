@@ -11,6 +11,6 @@ shift
 exec docker run --rm --network host --ipc host --user "$(id -u):$(id -g)" \
   -e HOME=/data -e ROS_LOG_DIR=/data/.roslog -e BENCH_DIR=/data \
   -e ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-0}" -e RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
-  -e FENCE="${FENCE:--0.85,0.35,-0.35,0.35}" -e PYTHONDONTWRITEBYTECODE=1 \
+  -e FENCE="${FENCE:--0.85,0.35,-0.35,0.35}" -e PYTHONDONTWRITEBYTECODE=1 -e TIMEOUT="${TIMEOUT:-300}" \
   -v "$HERE:/bench:ro" -v "$DATA:/data" my_diffbot:dev \
-  bash -lc "source /opt/ros/jazzy/setup.bash && cd /bench && timeout ${TIMEOUT:-300} python3 $script.py $*"
+  bash -lc 'source /opt/ros/jazzy/setup.bash && cd /bench && timeout "$TIMEOUT" python3 "$0.py" "$@"' "$script" "$@"

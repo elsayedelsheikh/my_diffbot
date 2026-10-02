@@ -6,6 +6,7 @@ Ground truth = settled LD06 scans (transformed into base_link via TF) registered
 reference scan taken at the start pose (ref.npz). Results go to $BENCH_DIR/out/<test>_<ts>.
 The arena frame is the robot pose when `reference` ran; FENCE is the free rectangle for the axle centre.
 """
+
 import json
 import math
 import os
@@ -19,7 +20,12 @@ import numpy as np
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, qos_profile_sensor_data
+from rclpy.qos import (
+    QoSProfile,
+    DurabilityPolicy,
+    ReliabilityPolicy,
+    qos_profile_sensor_data,
+)
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu, JointState, LaserScan
@@ -32,12 +38,21 @@ BENCH = os.environ.get('BENCH_DIR', '/root/bench')
 REF = f'{BENCH}/ref.npz'
 STATE = f'{BENCH}/state.json'
 # Free floor 0.5 m ahead, 1 m behind, 0.5 m to each side of the start pose, minus the footprint.
-FENCE = tuple(float(v) for v in os.environ.get('FENCE', '-0.85,0.35,-0.35,0.35').split(','))
+FENCE = tuple(
+    float(v) for v in os.environ.get('FENCE', '-0.85,0.35,-0.35,0.35').split(',')
+)
 CENTRE = (-0.25, 0.0)
 FOOTPRINT_R = 0.17  # chassis is a 0.15 m disc on the axle centre, plus margin
-INTRO = ['left_wheel.target_velocity', 'left_wheel.measured_velocity', 'left_wheel.firmware_velocity',
-         'left_wheel.pwm', 'right_wheel.target_velocity', 'right_wheel.measured_velocity',
-         'right_wheel.firmware_velocity', 'right_wheel.pwm']
+INTRO = [
+    'left_wheel.target_velocity',
+    'left_wheel.measured_velocity',
+    'left_wheel.firmware_velocity',
+    'left_wheel.pwm',
+    'right_wheel.target_velocity',
+    'right_wheel.measured_velocity',
+    'right_wheel.firmware_velocity',
+    'right_wheel.pwm',
+]
 
 
 class Abort(Exception):
@@ -91,7 +106,11 @@ def normals(ref, k=7):
         q = q - q.mean(0)
         w, v = np.linalg.eigh(q.T @ q)
         n[i] = v[:, 0]
-        good[i] = w[1] > 1e-9 and w[0] / max(w[1], 1e-12) < 0.15 and d2[i, nn[i, -1]] < 0.08 ** 2
+        good[i] = (
+            w[1] > 1e-9
+            and w[0] / max(w[1], 1e-12) < 0.15
+            and d2[i, nn[i, -1]] < 0.08**2
+        )
     return n, good
 
 
@@ -102,8 +121,10 @@ def icp(src, ref, refn, init, iters=60):
         d2 = ((p[:, None, :] - ref[None, :, :]) ** 2).sum(-1)
         j = d2.argmin(1)
         dist = np.sqrt(d2[np.arange(len(p)), j])
-        thr = max(0.04, 0.4 * 0.85 ** i)
-        m = dist < min(thr, max(0.015, np.percentile(dist, 75)))  # trimmed: people/chairs move
+        thr = max(0.04, 0.4 * 0.85**i)
+        m = dist < min(
+            thr, max(0.015, np.percentile(dist, 75))
+        )  # trimmed: people/chairs move
         if m.sum() < 30:
             return T, 1.0, 0.0
         pm, q, n = p[m], ref[j[m]], refn[j[m]]
@@ -118,7 +139,11 @@ def icp(src, ref, refn, init, iters=60):
     j = d2.argmin(1)
     res = np.abs(((p - ref[j]) * refn[j]).sum(1))
     inl = np.sqrt(d2[np.arange(len(p)), j]) < 0.05
-    return T, float(np.sqrt(np.mean(res[inl] ** 2))) if inl.any() else 1.0, float(inl.mean())
+    return (
+        T,
+        float(np.sqrt(np.mean(res[inl] ** 2))) if inl.any() else 1.0,
+        float(inl.mean()),
+    )
 
 
 class Bench(Node):
@@ -154,21 +179,35 @@ class Bench(Node):
         self.test_name = '?'
 
         sd = qos_profile_sensor_data
-        latched = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL,
-                             reliability=ReliabilityPolicy.RELIABLE)
+        latched = QoSProfile(
+            depth=10,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=ReliabilityPolicy.RELIABLE,
+        )
         self.pub = self.create_publisher(TwistStamped, '/cmd_vel', 10)
         self.create_subscription(Odometry, '/odom', self.on_ekf, 50)
-        self.create_subscription(Odometry, '/my_diffbot_base_controller/odom', self.on_wheel, 50)
+        self.create_subscription(
+            Odometry, '/my_diffbot_base_controller/odom', self.on_wheel, 50
+        )
         self.create_subscription(Imu, '/imu/data', self.on_imu, sd)
         self.create_subscription(JointState, '/joint_states', self.on_js, 50)
         self.create_subscription(LaserScan, '/scan_raw', self.on_scan, sd)
-        self.create_subscription(TwistStamped, '/my_diffbot_base_controller/cmd_vel_out',
-                                 self.on_cmd_out, 50)
+        self.create_subscription(
+            TwistStamped, '/my_diffbot_base_controller/cmd_vel_out', self.on_cmd_out, 50
+        )
         self.create_subscription(TFMessage, '/tf_static', self.on_tf_static, latched)
-        self.create_subscription(StatisticsNames, '/controller_manager/introspection_data/names',
-                                 self.on_intro_names, latched)
-        self.create_subscription(StatisticsValues, '/controller_manager/introspection_data/values',
-                                 self.on_intro_values, sd)
+        self.create_subscription(
+            StatisticsNames,
+            '/controller_manager/introspection_data/names',
+            self.on_intro_names,
+            latched,
+        )
+        self.create_subscription(
+            StatisticsValues,
+            '/controller_manager/introspection_data/values',
+            self.on_intro_values,
+            sd,
+        )
         self.create_subscription(DiagnosticArray, '/diagnostics', self.on_diag, 20)
         self.create_timer(0.02, self.tick)
 
@@ -195,16 +234,22 @@ class Bench(Node):
     def on_ekf(self, m):
         p = m.pose.pose
         self.ekf = (p.position.x, p.position.y, yaw_of(p.orientation))
-        self.rec['ekf'].append((self.now(), *self.ekf, m.twist.twist.linear.x, m.twist.twist.angular.z))
+        self.rec['ekf'].append(
+            (self.now(), *self.ekf, m.twist.twist.linear.x, m.twist.twist.angular.z)
+        )
 
     def on_wheel(self, m):
         p = m.pose.pose
         self.wheel = (p.position.x, p.position.y, yaw_of(p.orientation))
-        self.rec['wheel'].append((self.now(), *self.wheel, m.twist.twist.linear.x, m.twist.twist.angular.z))
+        self.rec['wheel'].append(
+            (self.now(), *self.wheel, m.twist.twist.linear.x, m.twist.twist.angular.z)
+        )
 
     def on_imu(self, m):
         self.imu_yaw = yaw_of(m.orientation)
-        self.rec['imu'].append((self.now(), self.imu_yaw, m.angular_velocity.z, m.linear_acceleration.x))
+        self.rec['imu'].append(
+            (self.now(), self.imu_yaw, m.angular_velocity.z, m.linear_acceleration.x)
+        )
 
     def on_js(self, m):
         try:
@@ -217,7 +262,9 @@ class Bench(Node):
         self.motion_hist.append((t, *self.js))
         if len(self.motion_hist) > 200:
             self.motion_hist = self.motion_hist[-200:]
-        self.rec['js'].append((t, m.position[il], m.position[ir], m.velocity[il], m.velocity[ir]))
+        self.rec['js'].append(
+            (t, m.position[il], m.position[ir], m.velocity[il], m.velocity[ir])
+        )
 
     def on_scan(self, m):
         r = np.array(m.ranges, dtype=float)
@@ -234,14 +281,20 @@ class Bench(Node):
     def update_clearance(self, pb):
         """Free distance from the footprint ahead, behind and all round; the body hides most of the rear."""
         d = np.hypot(pb[:, 0], pb[:, 1])
-        pb, d = pb[d > FOOTPRINT_R], d[d > FOOTPRINT_R]  # anything closer is the robot itself
+        pb, d = (
+            pb[d > FOOTPRINT_R],
+            d[d > FOOTPRINT_R],
+        )  # anything closer is the robot itself
         cone = np.abs(np.arctan2(pb[:, 1], np.abs(pb[:, 0]))) < math.radians(35)
         lane = (np.abs(pb[:, 1]) < FOOTPRINT_R + 0.05) | cone
         gap = d - FOOTPRINT_R
         ahead = gap[(pb[:, 0] > 0) & lane]
         behind = gap[(pb[:, 0] < 0) & lane]
-        c = (float(ahead.min()) if len(ahead) else 9.0, float(behind.min()) if len(behind) else 9.0,
-             float(gap.min()) if len(gap) else 9.0)
+        c = (
+            float(ahead.min()) if len(ahead) else 9.0,
+            float(behind.min()) if len(behind) else 9.0,
+            float(gap.min()) if len(gap) else 9.0,
+        )
         self.clear, self.clear_t = c, self.now()
         self.rec['clear'].append((self.clear_t, *c))
 
@@ -260,8 +313,11 @@ class Bench(Node):
         for tr in m.transforms:
             if tr.child_frame_id == 'lidar_link':
                 self.lidar_parent = tr.header.frame_id
-                self.T_lidar = (tr.transform.translation.x, tr.transform.translation.y,
-                                yaw_of(tr.transform.rotation))
+                self.T_lidar = (
+                    tr.transform.translation.x,
+                    tr.transform.translation.y,
+                    yaw_of(tr.transform.rotation),
+                )
 
     def on_intro_names(self, m):
         self.intro_names[m.names_version] = list(m.names)
@@ -289,17 +345,26 @@ class Bench(Node):
 
     def on_diag(self, m):
         for s in m.status:
-            self.rec['diag'].append((self.now(), s.name, int.from_bytes(s.level, 'little') if isinstance(s.level, bytes) else int(s.level), s.message,
-                                     {kv.key: kv.value for kv in s.values}))
+            self.rec['diag'].append(
+                (
+                    self.now(),
+                    s.name,
+                    int.from_bytes(s.level, 'little')
+                    if isinstance(s.level, bytes)
+                    else int(s.level),
+                    s.message,
+                    {kv.key: kv.value for kv in s.values},
+                )
+            )
 
     # ---------- safety ----------
     def tick(self):
         v, w = self.cmd
         t = self.now()
         if self.abort is None:
-            if self.js_t is None or t - self.js_t > 0.3:
-                if self.js_t is not None or t > 3.0:
-                    self.trip('STALE joint_states')
+            # startup is wait_ready's job; only trip once joint_states has been seen
+            if self.js_t is not None and t - self.js_t > 0.3:
+                self.trip('STALE joint_states')
             if self.fence_on and self.T_arena_odom and self.ekf:
                 x, y, _ = compose(self.T_arena_odom, self.ekf)
                 if not (FENCE[0] <= x <= FENCE[1] and FENCE[2] <= y <= FENCE[3]):
@@ -317,25 +382,37 @@ class Bench(Node):
                     elif v < -0.01 and behind < need:
                         self.trip(f'OBSTACLE {behind:.2f} m behind the footprint')
                     elif abs(v) <= 0.01 and around < 0.04:
-                        self.trip(f'OBSTACLE {around:.2f} m from the footprint while turning')
+                        self.trip(
+                            f'OBSTACLE {around:.2f} m from the footprint while turning'
+                        )
             old = [h for h in self.motion_hist if t - h[0] >= 0.6]
             if old and self.js:
                 o = old[-1]
                 still = [abs(self.js[0] - o[1]) < 1e-3, abs(self.js[1] - o[2]) < 1e-3]
-                stuck = [self.tgt_since[k] is not None and t - self.tgt_since[k] > 1.0 and still[k]
-                         for k in (0, 1)]
+                stuck = [
+                    self.tgt_since[k] is not None
+                    and t - self.tgt_since[k] > 1.0
+                    and still[k]
+                    for k in (0, 1)
+                ]
                 for k in (0, 1):
                     if stuck[k] and self.stall_start[k] is None:
                         self.stall_start[k] = t
-                        self.event(f'{"LEFT" if k == 0 else "RIGHT"} wheel stalled (target {self.cmd})')
+                        self.event(
+                            f'{"LEFT" if k == 0 else "RIGHT"} wheel stalled (target {self.cmd})'
+                        )
                     if not stuck[k]:
                         self.stall_start[k] = None
                 if all(stuck):
                     self.power_dropout()
-                elif any(stuck) and any(self.stall_start[k] is not None and t - self.stall_start[k] > 1.5
-                                        for k in (0, 1)):
-                    self.trip(f'{"LEFT" if stuck[0] else "RIGHT"} wheel not moving under command: '
-                              'wiring / encoder fault?')
+                elif any(stuck) and any(
+                    self.stall_start[k] is not None and t - self.stall_start[k] > 1.5
+                    for k in (0, 1)
+                ):
+                    self.trip(
+                        f'{"LEFT" if stuck[0] else "RIGHT"} wheel not moving under command: '
+                        'wiring / encoder fault?'
+                    )
         if self.abort is not None:
             v, w = 0.0, 0.0
         self.publish(v, w)
@@ -343,9 +420,15 @@ class Bench(Node):
 
     def power_dropout(self):
         it = self.rec['intro'][-1] if self.rec['intro'] else [0] * 9
-        ctx = dict(wall=time.strftime('%Y-%m-%d %H:%M:%S'), test=self.test_name, t_run=round(self.now(), 1),
-                   motion_s=round(self.motion_time, 1), cmd=list(self.cmd),
-                   target_mrps=[round(it[1]), round(it[5])], pwm_permille=[round(it[4]), round(it[8])])
+        ctx = dict(
+            wall=time.strftime('%Y-%m-%d %H:%M:%S'),
+            test=self.test_name,
+            t_run=round(self.now(), 1),
+            motion_s=round(self.motion_time, 1),
+            cmd=list(self.cmd),
+            target_mrps=[round(it[1]), round(it[5])],
+            pwm_permille=[round(it[4]), round(it[8])],
+        )
         with open(f'{BENCH}/dropouts.jsonl', 'a') as f:
             f.write(json.dumps(ctx) + '\n')
         self.trip(f'POWER DROPOUT? no edges on both wheels under command: {ctx}')
@@ -375,14 +458,19 @@ class Bench(Node):
 
     def set_pid(self, kp, ki, kd=0.0):
         if not hasattr(self, 'pid_pub'):
-            self.pid_pub = self.create_publisher(DynamicInterfaceGroupValues,
-                                                 '/roboauto_tuning_controller/commands', 10)
+            self.pid_pub = self.create_publisher(
+                DynamicInterfaceGroupValues, '/roboauto_tuning_controller/commands', 10
+            )
             time.sleep(0.5)
         m = DynamicInterfaceGroupValues()
         m.interface_groups = ['roboauto_pid']
         g = [kp * 1000, ki * 1000, kd * 1000]
-        m.interface_values = [InterfaceValue(interface_names=['kp_l', 'ki_l', 'kd_l', 'kp_r', 'ki_r', 'kd_r'],
-                                             values=[float(x) for x in g + g])]
+        m.interface_values = [
+            InterfaceValue(
+                interface_names=['kp_l', 'ki_l', 'kd_l', 'kp_r', 'ki_r', 'kd_r'],
+                values=[float(x) for x in g + g],
+            )
+        ]
         for _ in range(3):
             self.pid_pub.publish(m)
             time.sleep(0.1)
@@ -440,7 +528,9 @@ class Bench(Node):
                 break
             v = math.copysign(min(vmax, max(0.025, 1.6 * abs(rem))), rem)
             cross = -(x - x0) * uy + (y - y0) * ux
-            w = max(-0.4, min(0.4, 2.0 * wrap(th - yaw) - math.copysign(1, v) * 3.0 * cross))
+            w = max(
+                -0.4, min(0.4, 2.0 * wrap(th - yaw) - math.copysign(1, v) * 3.0 * cross)
+            )
             self.set(v, w)
             time.sleep(0.02)
         self.stop()
@@ -468,11 +558,19 @@ class Bench(Node):
     def wait_ready(self, timeout=10):
         end = time.monotonic() + timeout
         while time.monotonic() < end:
-            if self.ekf and self.wheel and self.js and self.T_lidar and len(self.scans) >= 3:
+            if (
+                self.ekf
+                and self.wheel
+                and self.js
+                and self.T_lidar
+                and len(self.scans) >= 3
+            ):
                 return
             time.sleep(0.05)
-        raise RuntimeError(f'not ready: ekf={bool(self.ekf)} wheel={bool(self.wheel)} js={bool(self.js)} '
-                           f'tf={bool(self.T_lidar)} scans={len(self.scans)}')
+        raise RuntimeError(
+            f'not ready: ekf={bool(self.ekf)} wheel={bool(self.wheel)} js={bool(self.js)} '
+            f'tf={bool(self.T_lidar)} scans={len(self.scans)}'
+        )
 
     def settled_cloud(self, n=4, settle=0.8):
         self.stop(settle)
@@ -497,7 +595,9 @@ class Bench(Node):
         init = compose(self.T_arena_odom, ekf)
         best = None
         for dth in (0.0, 0.1, -0.1, 0.25, -0.25):
-            T, rmse, inl = icp(voxel(cloud, 0.02), R['ref'], R['n'], (init[0], init[1], init[2] + dth))
+            T, rmse, inl = icp(
+                voxel(cloud, 0.02), R['ref'], R['n'], (init[0], init[1], init[2] + dth)
+            )
             if best is None or inl - 5 * rmse > best[2] - 5 * best[1]:
                 best = (T, rmse, inl)
             if inl > 0.7 and rmse < 0.018:
@@ -507,19 +607,37 @@ class Bench(Node):
         # Odometry can't see the caster scrubbing sideways in spins, so allow a 15 cm correction
         # for a good fit; a 12+ mm residual or a low inlier share is a mismatch, not a correction.
         ok = (inl >= 0.83 and rmse <= 0.0115) or (
-            inl >= 0.75 and rmse <= 0.012 and math.hypot(dev[0], dev[1]) < 0.15 and abs(dev[2]) < 0.09)
+            inl >= 0.75
+            and rmse <= 0.012
+            and math.hypot(dev[0], dev[1]) < 0.15
+            and abs(dev[2]) < 0.09
+        )
         if ok:
             self.T_arena_odom = compose(T, inverse(ekf))
             self.save_state()
         else:
-            self.event(f'WARNING keyframe {label}: ICP rejected inl={inl:.2f} rmse={rmse:.4f} '
-                       f'dev=({dev[0]:+.3f},{dev[1]:+.3f},{math.degrees(dev[2]):+.1f}deg); keeping odom prediction')
+            self.event(
+                f'WARNING keyframe {label}: ICP rejected inl={inl:.2f} rmse={rmse:.4f} '
+                f'dev=({dev[0]:+.3f},{dev[1]:+.3f},{math.degrees(dev[2]):+.1f}deg); keeping odom prediction'
+            )
         self.kf_clouds[f'{len(self.rec_kf):02d}_{label}'] = cloud
-        kf = dict(t=self.now(), label=label, truth=list(T), ekf=list(ekf), wheel=list(wheel), imu=imu,
-                  rmse=rmse, inl=inl, accepted=ok, pred=list(init))
+        kf = dict(
+            t=self.now(),
+            label=label,
+            truth=list(T),
+            ekf=list(ekf),
+            wheel=list(wheel),
+            imu=imu,
+            rmse=rmse,
+            inl=inl,
+            accepted=ok,
+            pred=list(init),
+        )
         self.rec_kf.append(kf)
-        self.event(f'KF {label}: truth ({T[0]:+.4f},{T[1]:+.4f},{math.degrees(T[2]):+.2f}deg) '
-                   f'rmse {rmse * 1000:.1f}mm inl {inl:.2f}')
+        self.event(
+            f'KF {label}: truth ({T[0]:+.4f},{T[1]:+.4f},{math.degrees(T[2]):+.2f}deg) '
+            f'rmse {rmse * 1000:.1f}mm inl {inl:.2f}'
+        )
         return kf
 
     rec_kf = []
@@ -543,15 +661,24 @@ class Bench(Node):
         diag_last = {}
         for t, nm, lvl, msg, kv in self.rec['diag']:
             diag_last[nm] = dict(t=t, level=lvl, msg=msg, values=kv)
-        meta = dict(name=name, events=self.events, keyframes=self.rec_kf, abort=self.abort,
-                    diag_last=diag_last, diag_levels=sorted({(nm, lvl, msg) for _, nm, lvl, msg, _ in self.rec['diag']}),
-                    extra=extra or {})
+        meta = dict(
+            name=name,
+            events=self.events,
+            keyframes=self.rec_kf,
+            abort=self.abort,
+            diag_last=diag_last,
+            diag_levels=sorted(
+                {(nm, lvl, msg) for _, nm, lvl, msg, _ in self.rec['diag']}
+            ),
+            extra=extra or {},
+        )
         with open(f'{out}/{name}_{stamp}.json', 'w') as f:
             json.dump(meta, f, indent=1, default=str)
         print(f'saved {out}/{name}_{stamp}', flush=True)
 
 
 # =================================== tests ===================================
+
 
 def t_reference(b):
     b.make_reference()
@@ -580,7 +707,9 @@ def t_locate(b):
     full = voxel(b.settled_cloud(n=6), 0.02)
     cloud = voxel(full, 0.06)
     R = np.load(REF)
-    keep = np.unique(np.floor(R['ref'] / 0.04).astype(int), axis=0, return_index=True)[1]
+    keep = np.unique(np.floor(R['ref'] / 0.04).astype(int), axis=0, return_index=True)[
+        1
+    ]
     ref_c, n_c = R['ref'][keep], R['n'][keep]
     b.event(f'locate: {len(cloud)} src / {len(ref_c)} ref pts')
     res = []
@@ -591,7 +720,9 @@ def t_locate(b):
                 res.append((inl - 5 * rmse, T, rmse, inl))
     res.sort(key=lambda r: -r[0])
     for sc, T, rmse, inl in res[:6]:
-        b.event(f'cand ({T[0]:+.3f},{T[1]:+.3f},{math.degrees(T[2]):+7.2f}) rmse {rmse*1000:.1f} inl {inl:.2f}')
+        b.event(
+            f'cand ({T[0]:+.3f},{T[1]:+.3f},{math.degrees(T[2]):+7.2f}) rmse {rmse * 1000:.1f} inl {inl:.2f}'
+        )
     best = None
     for sc, T0, _, _ in res[:6]:
         T, rmse, inl = icp(full, R['ref'], R['n'], T0, iters=60)
@@ -600,7 +731,9 @@ def t_locate(b):
     T, rmse, inl = best
     b.T_arena_odom = compose(T, inverse(b.ekf))
     b.save_state()
-    b.event(f'located ({T[0]:+.3f},{T[1]:+.3f},{math.degrees(T[2]):+.2f}) rmse {rmse*1000:.1f} inl {inl:.2f}')
+    b.event(
+        f'located ({T[0]:+.3f},{T[1]:+.3f},{math.degrees(T[2]):+.2f}) rmse {rmse * 1000:.1f} inl {inl:.2f}'
+    )
 
 
 def t_wheelcheck(b, w=0.8, T=1.5):
@@ -679,14 +812,16 @@ def t_lin_steps(b, vs=(0.1, 0.2, 0.3), L=0.9):
     b.keyframe('start')
     for v in vs:
         b.goto_arena(-0.78, 0.0, 0.0, vmax=0.15)
-        kf0 = b.keyframe(f'lin{v}_a')
+        b.keyframe(f'lin{v}_a')
         b.event(f'lin step {v:+.2f}')
         x0 = b.ekf
         T = L / v
         b.set(v, 0.0)
         t_end = time.monotonic() + T + 1.0
         while time.monotonic() < t_end:
-            dx = (b.ekf[0] - x0[0]) * math.cos(x0[2]) + (b.ekf[1] - x0[1]) * math.sin(x0[2])
+            dx = (b.ekf[0] - x0[0]) * math.cos(x0[2]) + (b.ekf[1] - x0[1]) * math.sin(
+                x0[2]
+            )
             if dx > L - v * v / 1.6 - 0.01:
                 break
             time.sleep(0.01)
@@ -794,7 +929,7 @@ def t_umb(b, side=0.6, runs=5, v=0.2, w=0.8, dirs='ccw,cw', corner_kf_runs=1):
         for i in range(runs):
             sy = -h if d == 'ccw' else h
             b.goto_arena(cx - h, cy + sy, 0.0, vmax=0.15)
-            kf0 = b.keyframe(f'umb_{d}{i}_start')
+            b.keyframe(f'umb_{d}{i}_start')
             b.event(f'umb {d} run {i}')
             turn = math.pi / 2 if d == 'ccw' else -math.pi / 2
             x0, y0, th0 = b.ekf
@@ -812,9 +947,24 @@ def t_umb(b, side=0.6, runs=5, v=0.2, w=0.8, dirs='ccw,cw', corner_kf_runs=1):
     b.keyframe('end')
 
 
-TESTS = dict(locate=t_locate, wheelcheck=t_wheelcheck, reference=t_reference, smoke=t_smoke, static=t_static, home=t_home,
-             spin=t_spin_steps, lin=t_lin_steps, low=t_lowspeed, arc=t_arc, rev=t_reversal,
-             rot=t_rot, umb=t_umb, backoff=t_backoff, centre=t_centre, pid=t_pid)
+TESTS = dict(
+    locate=t_locate,
+    wheelcheck=t_wheelcheck,
+    reference=t_reference,
+    smoke=t_smoke,
+    static=t_static,
+    home=t_home,
+    spin=t_spin_steps,
+    lin=t_lin_steps,
+    low=t_lowspeed,
+    arc=t_arc,
+    rev=t_reversal,
+    rot=t_rot,
+    umb=t_umb,
+    backoff=t_backoff,
+    centre=t_centre,
+    pid=t_pid,
+)
 
 
 def main():
@@ -851,7 +1001,9 @@ def main():
         if pubs > 1:
             raise RuntimeError(f'{pubs} publishers on /cmd_vel; stop teleop first')
         b.test_name = name
-        b.event(f'start {name} {kwargs} lidar {getattr(b, "lidar_parent", "?")} {b.T_lidar}')
+        b.event(
+            f'start {name} {kwargs} lidar {getattr(b, "lidar_parent", "?")} {b.T_lidar}'
+        )
         TESTS[name](b, **kwargs)
         b.event(f'done {name}')
     except (Abort, KeyboardInterrupt) as e:
@@ -859,6 +1011,7 @@ def main():
     except Exception as e:
         b.trip(f'exception {e!r}')
         import traceback
+
         traceback.print_exc()
     finally:
         b.cmd = (0.0, 0.0)
@@ -867,8 +1020,8 @@ def main():
         while time.monotonic() < end:
             b.publish(0.0, 0.0)
             time.sleep(0.02)
+        ex.shutdown()  # stop callbacks before dump iterates self.rec
         b.dump(name, extra=kwargs)
-        ex.shutdown()
         rclpy.try_shutdown()
 
 
