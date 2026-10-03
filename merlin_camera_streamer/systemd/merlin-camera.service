@@ -1,0 +1,18 @@
+[Unit]
+Description=Merlin CSI camera WebRTC streamer (MediaMTX)
+After=network-online.target nvargus-daemon.service
+Wants=network-online.target nvargus-daemon.service
+
+[Service]
+# ponytail: runs as root for Argus/NVENC device access; drop to a video-group user if it matters.
+ExecStart=/usr/local/bin/mediamtx /etc/merlin/mediamtx.yml
+Restart=always
+RestartSec=2
+# rtspclientsink on GStreamer 1.16 logs a harmless gst_buffer_resize_range assertion every
+# frame (~30/s, no frame loss). Cap it so it can't rotate the rest of the journal away;
+# journald logs "Suppressed N messages" so the cap stays visible.
+LogRateLimitIntervalSec=30s
+LogRateLimitBurst=200
+
+[Install]
+WantedBy=multi-user.target

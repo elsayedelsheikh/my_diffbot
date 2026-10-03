@@ -111,3 +111,10 @@ services:
     extends: dev
     command: ros2 launch foxglove_bridge foxglove_bridge_launch.xml
 
+  # Lean bridge for the Android app (port 8766); see merlin_bringup/config/foxglove_app.yaml.
+  foxglove-app:
+    extends: dev
+    restart: unless-stopped
+    command: >-
+      ros2 run foxglove_bridge foxglove_bridge --ros-args -r __node:=foxglove_bridge_app
+      --params-file /overlay_ws/src/merlin_bringup/config/foxglove_app.yaml

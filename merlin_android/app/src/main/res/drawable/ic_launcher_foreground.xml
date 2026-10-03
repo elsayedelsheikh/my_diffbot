@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Merlin: wizard hat with a star, inside the 66dp adaptive-icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#5B21B6" android:pathData="M27,72 C27,66 81,66 81,72 C81,78 27,78 27,72 Z" />
+    <path android:fillColor="#7C3AED" android:pathData="M37,71 L52,36 C55,29 61,27 67,30 C62,31 60,34 61,38 L71,71 C62,74 46,74 37,71 Z" />
+    <path android:fillColor="#FBBF24" android:pathData="M40,64 C49,67 59,67 68,64 L69.5,69 C59,72 49,72 38.6,69 Z" />
+    <path android:fillColor="#FBBF24" android:pathData="M55,44 L56.8,48.6 L61.6,48.9 L57.9,52 L59.1,56.7 L55,54.1 L50.9,56.7 L52.1,52 L48.4,48.9 L53.2,48.6 Z" />
+    <path android:fillColor="#FDE68A" android:pathData="M74,40 L75,43 L78,44 L75,45 L74,48 L73,45 L70,44 L73,43 Z" />
+    <path android:fillColor="#FDE68A" android:pathData="M36,46 L36.6,47.8 L38.4,48.4 L36.6,49 L36,50.8 L35.4,49 L33.6,48.4 L35.4,47.8 Z" />
+</vector>

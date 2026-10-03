@@ -11,6 +11,8 @@ my_diffbot/
 ├── merlin_hardware_interface/ # ros2_control hardware interface (Kestrel ESP32-S3 base)
 ├── merlin_localization/       # EKF localization config (robot_localization)
 ├── merlin_navigation/         # Nav2 + slam_toolbox params and thin launch wrappers
+├── merlin_camera_streamer/    # CSI camera -> WebRTC (MediaMTX/WHEP), runs on the Jetson host
+├── merlin_android/            # Android app: camera view + joystick teleop (Gradle, not colcon)
 ├── docker/                    # Dockerfile (base + overlay stages)
 ├── docker-compose.yaml        # Development container services
 ├── dependencies.repos         # External repos (ldlidar_stl_ros2)
@@ -145,6 +147,43 @@ for tuning plots.
 
 ```bash
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
+```
+
+### Android app
+
+`merlin_android/` shows the CSI camera over WebRTC and drives the robot with two thumbsticks
+(left: forward/back, right: turn), publishing `TwistStamped` on `/cmd_vel` through
+foxglove_bridge's client publish. Full deflection is the base controller's limit (0.35 m/s,
+1.5 rad/s); releasing sends a stop, and a dropped link stops the robot via the controller's
+0.5 s `cmd_vel_timeout`. On the robot run `docker compose up -d foxglove-app` (a lean bridge on port 8766)
+and the camera streamer below, then enter the Jetson IP and camera password in the app.
+
+```bash
+cd merlin_android
+./gradlew assembleDebug        # needs the Android SDK (local.properties: sdk.dir=...)
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+./gradlew testDebugUnitTest
+```
+
+### Camera streamer
+
+`merlin_camera_streamer` runs MediaMTX on the **Jetson host** (Argus and the NVENC encoder are
+L4T GStreamer plugins, unavailable inside the `ros:jazzy` container). When a viewer connects,
+it starts `nvarguscamerasrc` 1920x1080@30 -> `nvv4l2h264enc` (3 Mbps, baseline, 1 s IDR) and
+serves it over WHEP at `http://<jetson>:8889/cam/whep`; open `http://<jetson>:8889/cam` in a
+browser to check it. Bitrate and `flip-method` are in `config/mediamtx.yml`. A second path, `cam_low`
+(640x360, ~200 kbit/s), is what the app uses unless "HD video" is on: relayed Wi-Fi to Wi-Fi through
+the home router, the Jetson->phone direction only carries ~0.25 Mbit/s. Only one path can use the camera at a time.
+
+Viewing needs user `merlin` and a password; only the pipeline on the Jetson itself may publish,
+and RTSP listens on localhost only. `install.sh` keeps the installed password, or generates and
+prints one on first install. Teleop (foxglove_bridge, ports 8765/8766) has no auth: anyone on the robot's
+network can drive it.
+
+```bash
+sudo merlin_camera_streamer/install.sh                          # on the Jetson host; re-run after config changes
+sudo MERLIN_CAMERA_PASS=<new-pass> merlin_camera_streamer/install.sh   # set/change the password
+journalctl -u merlin-camera -f
 ```
 
 ## Docker Usage

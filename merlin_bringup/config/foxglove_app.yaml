@@ -1,0 +1,12 @@
+# Lean foxglove_bridge for the phone app (port 8766), next to the full one Foxglove Studio uses (8765).
+# The full bridge sends ~630 KB of channel/schema advertisements on connect. Relayed Wi-Fi to Wi-Fi
+# through the router, Jetson->phone only carries ~0.25 Mbit/s, so that burst blacked out the phone link
+# for ~10 s on every connect. This one advertises only what the app reads (~7 KB on connect).
+# Add topics here as the app grows (scan, map...), keeping the Jetson->phone budget in mind.
+foxglove_bridge_app:
+  ros__parameters:
+    port: 8766
+    topic_whitelist: ["^/battery_state_broadcaster/battery_state$"]
+    service_whitelist: ["^$"]
+    param_whitelist: ["^$"]
+    capabilities: [clientPublish]

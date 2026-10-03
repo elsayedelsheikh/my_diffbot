@@ -1,0 +1,73 @@
+# MediaMTX config for the Merlin CSI camera. Only overrides are listed; everything
+# else is MediaMTX's default. Viewers pull WebRTC over WHEP:
+#   http://<jetson>:8889/cam/whep    (browser test page: http://<jetson>:8889/cam)
+
+# Viewers need the password; install.sh replaces the placeholder (never commit a real one).
+# Only the camera pipeline on this host may publish, so nobody on the LAN can swap the feed.
+authInternalUsers:
+  - user: merlin
+    pass: MERLIN_CAMERA_PASS
+    permissions:
+      - action: read
+  - user: any
+    ips: ["127.0.0.1", "::1"]
+    permissions:
+      - action: publish
+
+# Only the local RTSP ingest (gst -> MediaMTX) and WebRTC egress are used.
+rtsp: true
+rtspAddress: 127.0.0.1:8554
+rtspTransports: [tcp]
+rtmp: false
+hls: false
+srt: false
+moq: false
+
+webrtc: true
+webrtcAddress: :8889
+webrtcLocalUDPAddress: :8189
+# TCP fallback when UDP connectivity checks keep getting lost on weak Wi-Fi.
+webrtcLocalTCPAddress: :8189
+# Offer only the LAN address: lo and docker0 candidates just burn the phone's ICE checks.
+webrtcIPsFromInterfacesList: [wlan0]
+# Empty = host candidates only (LAN), no STUN round trips.
+webrtcICEServers2: []
+
+paths:
+  cam:
+    # The camera and the encoder only run while someone is watching.
+    # Hardware H.264 (NVENC), baseline profile without B-frames, so every
+    # Android hardware decoder takes it. SPS/PPS go out with every IDR, and the
+    # 1 s IDR interval lets a late viewer start within a second.
+    # Calibration knobs: bitrate (bps), flip-method (0..7 if the camera is mounted rotated).
+    runOnDemand: >-
+      gst-launch-1.0 -e
+      nvarguscamerasrc sensor-id=0
+      ! video/x-raw(memory:NVMM),width=1920,height=1080,framerate=30/1
+      ! nvvidconv flip-method=0
+      ! video/x-raw(memory:NVMM),format=I420
+      ! nvv4l2h264enc bitrate=3000000 control-rate=1 profile=0 preset-level=1
+      insert-sps-pps=true insert-vui=true idrinterval=30 iframeinterval=30 maxperf-enable=true
+      ! h264parse ! queue
+      ! rtspclientsink protocols=tcp location=rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+    runOnDemandRestart: true
+    runOnDemandStartTimeout: 15s
+    runOnDemandCloseAfter: 10s
+  # Low-bitrate driving stream for weak links (http://<jetson>:8889/cam_low/whep): 640x360 at
+  # ~200 kbit/s. Relayed Wi-Fi to Wi-Fi through the home router, Jetson->phone survives only
+  # ~0.25 Mbit/s, so the full stream above blacks the link out there. Both paths share the camera:
+  # only one can stream at a time. IDR every 2 s keeps keyframe bursts rare at this bitrate.
+  cam_low:
+    runOnDemand: >-
+      gst-launch-1.0 -e
+      nvarguscamerasrc sensor-id=0
+      ! video/x-raw(memory:NVMM),width=1280,height=720,framerate=30/1
+      ! nvvidconv flip-method=0
+      ! video/x-raw(memory:NVMM),width=640,height=360,format=I420
+      ! nvv4l2h264enc bitrate=200000 control-rate=1 profile=0 preset-level=1
+      insert-sps-pps=true insert-vui=true idrinterval=60 iframeinterval=60 maxperf-enable=true
+      ! h264parse ! queue
+      ! rtspclientsink protocols=tcp location=rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+    runOnDemandRestart: true
+    runOnDemandStartTimeout: 15s
+    runOnDemandCloseAfter: 10s
