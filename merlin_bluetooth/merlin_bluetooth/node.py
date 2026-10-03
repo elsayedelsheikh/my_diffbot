@@ -67,6 +67,13 @@ class Robot:
             self._watchdog = asyncio.ensure_future(self._revert_unless_joined(previous))
         return fields, err
 
+    async def shutdown(self):
+        # Powers the Jetson off (host systemd, through PID 1's mount namespace). Delayed so the
+        # reply reaches the phone first; docker stops the containers, so the wheels stop too.
+        self._node.get_logger().warning('shutdown requested over Bluetooth: powering off in 2 s')
+        asyncio.get_running_loop().call_later(2.0, lambda: asyncio.ensure_future(
+            asyncio.create_subprocess_exec('nsenter', '-t', '1', '-m', '--', 'systemctl', 'poweroff')))
+
     def _cancel_watchdog(self):
         if self._watchdog is not None:
             self._watchdog.cancel()

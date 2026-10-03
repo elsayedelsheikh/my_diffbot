@@ -170,6 +170,9 @@ class Session:
             return await self._result(req_id, self._robot.join_wifi(ssid, password))
         if op == 'start_hotspot':
             return await self._result(req_id, self._robot.start_hotspot())
+        if op == 'shutdown':
+            await self._robot.shutdown()
+            return {'id': req_id, 'ok': True}
         return error(req_id, 'unknown_op', str(op))
 
     @staticmethod

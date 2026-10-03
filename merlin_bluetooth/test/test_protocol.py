@@ -91,6 +91,9 @@ class FakeRobot:
     async def join_wifi(self, ssid, password):
         return (None, ('not_found', 'x')) if ssid == 'nope' else ({'ip': '1.2.3.4'}, None)
 
+    async def shutdown(self):
+        self.off = True
+
     async def start_hotspot(self):
         return {'mode': 'hotspot', 'ssid': 'Merlin-hotspot', 'password': 'p' * 12, 'ip': '10.42.0.1'}, None
 
@@ -117,11 +120,14 @@ def test_pairing_then_sealed_requests():
     assert phone.open(run(s, phone.seal({'id': 4, 'op': 'join_wifi', 'ssid': 'nope'})))['error'] == 'not_found'
     assert phone.open(run(s, phone.seal({'id': 5, 'op': 'start_hotspot'})))['ssid'] == 'Merlin-hotspot'
     assert phone.open(run(s, phone.seal({'id': 6, 'op': 'fly'})))['error'] == 'unknown_op'
+    assert phone.open(run(s, phone.seal({'id': 7, 'op': 'shutdown'}))) == {'id': 7, 'ok': True}
+    assert s._robot.off
 
 
 def test_nothing_without_the_pin():
     s = Session('Merlin', PIN, FakeRobot(), Lockout())
     assert run(s, {'id': 1, 'op': 'status'})['error'] == 'unauthorized'  # plaintext requests are refused
+    assert run(s, {'id': 1, 'op': 'shutdown'})['error'] == 'unauthorized' and not hasattr(s._robot, 'off')
     phone = Phone('87654321')
     assert run(s, phone.verify_msg(run(s, {'id': 1, 'op': 'pair_start'})))['error'] == 'bad_pin'
     assert run(s, phone.seal({'id': 3, 'op': 'status'}))['error'] == 'unauthorized'
@@ -134,7 +140,8 @@ def test_replay_and_tamper_refused():
     assert 'c' in run(s, sealed)
     assert run(s, sealed)['error'] == 'bad_request'  # same counter again
     forged = phone.seal({'id': 4, 'op': 'status'})
-    forged['c'] = b64(unb64(forged['c'])[:-1] + b'\0')
+    raw = unb64(forged['c'])
+    forged['c'] = b64(raw[:-1] + bytes([raw[-1] ^ 1]))  # flip one bit of the tag
     assert run(s, forged)['error'] == 'bad_request'
 
 

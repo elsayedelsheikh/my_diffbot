@@ -3,6 +3,7 @@ package com.merlin.app
 import android.Manifest
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -35,7 +36,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -177,6 +180,7 @@ fun SetupPanel(
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf(if (host.isEmpty()) "Enter the robot PIN to find it over Bluetooth" else summary) }
     var advanced by remember { mutableStateOf(false) }
+    var confirmShutdown by remember { mutableStateOf(false) }
     var ledMode by remember { mutableIntStateOf(prefs.getInt("led_mode", 0)) }
     var ledColor by remember { mutableIntStateOf(prefs.getInt("led_color", LED_COLORS[1])) }
 
@@ -229,11 +233,32 @@ fun SetupPanel(
         }
     }
 
+    fun shutdown() {
+        if (!paired && BLE_PERMISSIONS.any { context.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }) {
+            status = "Find the robot first, then shut it down"
+            return
+        }
+        run("Shutting down the robot…") {
+            if (!paired) {
+                ble.connect()
+                ble.pair(pin)
+            }
+            ble.call("shutdown")
+            ble.close()
+            paired = false
+            status = "Robot is shutting down. Wait for its lights to go out before cutting power."
+        }
+    }
+
     fun led(mode: Int, color: Int) {
         ledMode = mode
         ledColor = color
         prefs.edit().putInt("led_mode", mode).putInt("led_color", color).apply()
         onLed(mode, color)
+    }
+
+    if (confirmShutdown) {
+        ConfirmShutdown(onConfirm = { confirmShutdown = false; shutdown() }, onDismiss = { confirmShutdown = false })
     }
 
     // Scrim: tap outside to close. The sheet rides above the keyboard and clears the cutout.
@@ -322,6 +347,12 @@ fun SetupPanel(
                                 status = "Connecting to $draftHost"
                             }) { Text("Connect to this address") }
                         }
+                        // Over Bluetooth, so it works whatever network the robot is on, and needs the PIN.
+                        OutlinedButton(
+                            enabled = !busy && (paired || pin.length >= 6), modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            onClick = { confirmShutdown = true },
+                        ) { Text("Shut down robot") }
                     }
                     // ---- Video + LED ---------------------------------------------------------
                     Column(
@@ -355,6 +386,15 @@ fun SetupPanel(
         }
     }
 }
+
+@Composable
+private fun ConfirmShutdown(onConfirm: () -> Unit, onDismiss: () -> Unit) = AlertDialog(
+    onDismissRequest = onDismiss,
+    title = { Text("Shut down the robot?") },
+    text = { Text("The Jetson powers off and the robot stops. It has to be switched back on by hand.") },
+    confirmButton = { TextButton(onClick = onConfirm) { Text("Shut down", color = MaterialTheme.colorScheme.error) } },
+    dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+)
 
 @Composable
 private fun Section(title: String) =

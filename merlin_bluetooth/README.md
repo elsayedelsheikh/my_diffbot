@@ -4,7 +4,8 @@ Bluetooth (BLE) provisioning link between the Merlin Android app and the robot. 
 
 - finds the robot with nothing configured (no IP, no shared network),
 - reads the robot's IP, camera viewer password and ports,
-- moves the robot's Wi-Fi: onto the robot's own hotspot, the phone's hotspot or any Wi-Fi.
+- moves the robot's Wi-Fi: onto the robot's own hotspot, the phone's hotspot or any Wi-Fi,
+- powers the robot off.
 
 Video and teleop still run over Wi-Fi; Bluetooth only gets the two onto the same network.
 
@@ -86,6 +87,7 @@ with `n` starting at 1 and strictly increasing per direction. Inside:
 | `{"id","op":"status"}` | `name`, `uptime_s`, `wifi:{mode: station\|hotspot\|disconnected, ssid, ip}`, `camera:{user, password, port}`, `bridge_port` |
 | `{"id","op":"join_wifi","ssid","password"}` | `mode`, `ssid`, `ip`. Empty `password` uses the profile saved on the robot. Errors: `not_found`, `auth_failed`, `failed` (the robot returns to its previous network) |
 | `{"id","op":"start_hotspot"}` | `mode`, `ssid`, `password`, `ip`. WPA2, created once with a random password and kept in the NetworkManager profile `merlin-hotspot` |
+| `{"id","op":"shutdown"}` | none. The Jetson powers off 2 s after the reply (host `systemctl poweroff`) |
 
 Other errors: `unauthorized` (not paired), `bad_request`, `unknown_op`.
 
