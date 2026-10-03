@@ -1,0 +1,18 @@
+# merlin_bluetooth only: a small image so the Nano doesn't rebuild the base workspace for it.
+# Talks to the host's bluetoothd (D-Bus) and NetworkManager (host nmcli via nsenter).
+ARG ROS_DISTRO=jazzy
+FROM ros:${ROS_DISTRO}
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends python3-dbus-next python3-cryptography ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
+ && rm -rf /var/lib/apt/lists/*
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+
+WORKDIR /overlay_ws
+COPY merlin_bluetooth/ src/merlin_bluetooth/
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash && colcon build --symlink-install
+
+COPY docker/entrypoint.sh /
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["ros2", "run", "merlin_bluetooth", "bluetooth_node"]

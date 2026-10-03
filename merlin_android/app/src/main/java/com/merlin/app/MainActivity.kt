@@ -17,18 +17,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,14 +43,15 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import org.webrtc.EglBase
 import org.webrtc.RendererCommon
@@ -83,7 +79,8 @@ class MainActivity : ComponentActivity() {
     private var bridgeState by mutableStateOf("idle")
     private var batteryPercent by mutableStateOf<Float?>(null)
     private lateinit var whep: WhepClient
-    private val foxglove = FoxgloveClient({ bridgeState = it }, { _, pct -> batteryPercent = pct })
+    private var uptimeSeconds by mutableStateOf<Long?>(null)
+    private val foxglove = FoxgloveClient({ bridgeState = it }, { _, pct -> batteryPercent = pct }, { uptimeSeconds = it })
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,6 +113,8 @@ class MainActivity : ComponentActivity() {
                 // 1080p, for when the phone talks to the robot directly (robot hotspot).
                 var hd by remember { mutableStateOf(prefs.getBoolean("hd", false)) }
                 var settingsOpen by remember { mutableStateOf(host.isEmpty()) }
+                // "Robot hotspot" / "Phone hotspot" / "Wi-Fi": how this phone reaches the robot right now.
+                var method by remember { mutableStateOf("") }
                 var linear by remember { mutableFloatStateOf(0f) }
                 var angular by remember { mutableFloatStateOf(0f) }
 
@@ -158,6 +157,20 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                // Re-checked while connected: the phone can change networks under a live link, and an
+                // effect keyed on the bridge state misses a reconnect that completes within one frame.
+                LaunchedEffect(host) {
+                    while (true) {
+                        if (bridgeState == "connected") {
+                            method = withContext(Dispatchers.IO) { RobotWifi.method(this@MainActivity, host) }
+                        } else {
+                            method = ""
+                            uptimeSeconds = null
+                        }
+                        delay(2000)
+                    }
+                }
+
                 Box(Modifier.fillMaxSize().background(Color.Black)) {
                     AndroidView({ renderer }, Modifier.fillMaxSize())
                     if (!videoOn || videoState != "connected") {
@@ -168,7 +181,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     StatusPill(
-                        videoOn, videoState, bridgeState, batteryPercent,
+                        videoOn, videoState, bridgeState, batteryPercent, uptimeSeconds, method,
                         Modifier.align(Alignment.TopCenter).padding(top = 12.dp).clickable { settingsOpen = true },
                     )
 
@@ -183,63 +196,30 @@ class MainActivity : ComponentActivity() {
                     ) { x, _ -> angular = -x }
 
                     if (settingsOpen) {
-                        var draftHost by remember { mutableStateOf(host) }
-                        var draftPassword by remember { mutableStateOf(password) }
-                        AlertDialog(
-                            onDismissRequest = { if (host.isNotEmpty()) settingsOpen = false },
-                            title = { Text("Merlin") },
-                            text = {
-                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    OutlinedTextField(
-                                        draftHost, { draftHost = it.trim() }, singleLine = true,
-                                        label = { Text("Robot IP") }, modifier = Modifier.fillMaxWidth(),
-                                    )
-                                    OutlinedTextField(
-                                        draftPassword, { draftPassword = it.trim() }, singleLine = true,
-                                        label = { Text("Camera password") }, modifier = Modifier.fillMaxWidth(),
-                                        visualTransformation = PasswordVisualTransformation(),
-                                    )
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Column(Modifier.weight(1f)) {
-                                            Text("Video")
-                                            Text(
-                                                "Off frees the Wi-Fi for driving", fontSize = 12.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-                                        // Video off: the Jetson stops the camera 10 s later.
-                                        Switch(videoOn, {
-                                            videoOn = it
-                                            prefs.edit().putBoolean("video", it).apply()
-                                            if (host.isNotEmpty()) { if (it) startVideo() else stopVideo() }
-                                        })
-                                    }
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Column(Modifier.weight(1f)) {
-                                            Text("HD video")
-                                            Text(
-                                                "1080p; needs a direct link to the robot (hotspot)", fontSize = 12.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-                                        Switch(hd, {
-                                            hd = it
-                                            prefs.edit().putBoolean("hd", it).apply()
-                                            if (host.isNotEmpty() && videoOn) startVideo()
-                                        })
-                                    }
-                                }
+                        SetupPanel(
+                            prefs, host, password,
+                            summary = if (method.isEmpty()) "Connecting to $host…" else "$method · $host",
+                            videoOn = videoOn, hd = hd,
+                            onRobot = { h, p ->
+                                prefs.edit().putString("host", h).putString("password", p).apply()
+                                val same = h == host && p == password
+                                host = h
+                                password = p
+                                if (same) connect()  // otherwise the LaunchedEffect above reconnects
                             },
-                            confirmButton = {
-                                TextButton(enabled = draftHost.isNotEmpty(), onClick = {
-                                    prefs.edit().putString("host", draftHost).putString("password", draftPassword).apply()
-                                    val same = draftHost == host && draftPassword == password
-                                    host = draftHost
-                                    password = draftPassword
-                                    if (same) connect()  // otherwise the LaunchedEffect above reconnects
-                                    settingsOpen = false
-                                }) { Text("Connect") }
+                            // Video off: the Jetson stops the camera 10 s later.
+                            onVideo = {
+                                videoOn = it
+                                prefs.edit().putBoolean("video", it).apply()
+                                if (host.isNotEmpty()) { if (it) startVideo() else stopVideo() }
                             },
+                            onHd = {
+                                hd = it
+                                prefs.edit().putBoolean("hd", it).apply()
+                                if (host.isNotEmpty() && videoOn) startVideo()
+                            },
+                            onLed = { mode, color -> foxglove.sendLed(mode, color) },
+                            onClose = { settingsOpen = false },
                         )
                     }
                 }
@@ -266,7 +246,9 @@ private fun String.color() = when {
 
 /** Minimal glass pill: one dot per link; tap opens the settings. */
 @Composable
-private fun StatusPill(videoOn: Boolean, video: String, drive: String, battery: Float?, modifier: Modifier) {
+private fun StatusPill(
+    videoOn: Boolean, video: String, drive: String, battery: Float?, uptime: Long?, method: String, modifier: Modifier,
+) {
     Row(
         modifier
             .background(Color(0x66000000), RoundedCornerShape(50))
@@ -287,8 +269,26 @@ private fun StatusPill(videoOn: Boolean, video: String, drive: String, battery: 
                 color = if (battery < 20f) Bad else Color.White,
             )
         }
+        if (uptime != null) {
+            Spacer(Modifier.width(6.dp))
+            Text("up ${uptimeText(uptime)}", color = Color(0xCCFFFFFF), fontSize = 12.sp)
+        }
+        if (method.isNotEmpty()) {
+            Spacer(Modifier.width(6.dp))
+            Text(method, color = Accent, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        }
         Spacer(Modifier.width(6.dp))
         Text("MERLIN", color = Color(0x99FFFFFF), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
+    }
+}
+
+/** 42 -> "0m", 3700 -> "1h 01m", 200000 -> "2d 7h". */
+internal fun uptimeText(seconds: Long): String {
+    val m = seconds / 60
+    return when {
+        m < 60 -> "${m}m"
+        m < 24 * 60 -> "%dh %02dm".format(Locale.US, m / 60, m % 60)
+        else -> "${m / 1440}d ${m / 60 % 24}h"
     }
 }
 

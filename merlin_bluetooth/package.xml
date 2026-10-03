@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>merlin_bluetooth</name>
+  <version>1.0.0</version>
+  <description>
+    BLE provisioning link for the Merlin app: the phone proves the robot PIN (SRP-6a), then over
+    an AES-GCM session reads the robot IP and camera password or moves wlan0 to another Wi-Fi,
+    the phone's hotspot or the robot's own hotspot. Runs against the host bluetoothd and
+    NetworkManager.
+  </description>
+  <maintainer email="elsayed.elsheikh97@gmail.com">sayed</maintainer>
+  <license>Apache-2.0</license>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>python3-dbus-next</exec_depend>
+  <exec_depend>python3-cryptography</exec_depend>
+
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

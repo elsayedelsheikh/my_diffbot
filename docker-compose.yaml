@@ -70,7 +70,6 @@ services:
         ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
         RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
         CYCLONEDDS_URI: file:///cyclonedds.xml
-        CYCLONE_IFACE: ${CYCLONE_IFACE:-wlan0}
     user: root
     command: sleep infinity
 
@@ -118,3 +117,24 @@ services:
     command: >-
       ros2 run foxglove_bridge foxglove_bridge --ros-args -r __node:=foxglove_bridge_app
       --params-file /overlay_ws/src/merlin_bringup/config/foxglove_app.yaml
+
+  # BLE provisioning for the Android app (merlin_bluetooth/README.md). Set MERLIN_BT_PIN
+  # (6-12 digits) in .env; the app asks for it once.
+  bluetooth:
+    image: merlin:bluetooth
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.bluetooth
+    restart: unless-stopped
+    network_mode: host
+    pid: host          # nsenter runs the host's nmcli/iw (matches its NetworkManager 1.22)
+    privileged: true
+    volumes:
+      - /var/run/dbus:/var/run/dbus      # host bluetoothd
+      - /etc/merlin:/etc/merlin:ro       # camera viewer password (merlin_camera_streamer)
+      - ./merlin_bluetooth:/overlay_ws/src/merlin_bluetooth:ro
+      - ./docker/cyclonedds.xml:/cyclonedds.xml:ro
+    environment:
+      MERLIN_BT_PIN: ${MERLIN_BT_PIN:?set MERLIN_BT_PIN (6-12 digits) in .env}
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
+      CYCLONEDDS_URI: file:///cyclonedds.xml

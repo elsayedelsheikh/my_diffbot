@@ -41,4 +41,12 @@ class FoxgloveClientTest {
         assertEquals(7.53f, volts, 0.01f)
         assertEquals(63.75f, pct, 0.01f)
     }
+
+    @Test
+    fun parsesUptimeAndBuildsLedCommand() {
+        assertEquals(1235L, FoxgloveClient.uint32(byteArrayOf(0, 1, 0, 0, 0xD3.toByte(), 0x04, 0, 0)))
+        assertEquals(null, FoxgloveClient.uint32(byteArrayOf(0, 1, 0, 0)))
+        // 0x00FF00 = 65280: the README's "green, blinking every 500 ms" example.
+        assert(FoxgloveClient.ledJson(2, 0x00FF00, 0, 500).endsWith(""""values":[2.0,65280.0,0.0,500.0]}]}"""))
+    }
 }

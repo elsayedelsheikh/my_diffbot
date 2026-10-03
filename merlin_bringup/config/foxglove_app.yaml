@@ -6,7 +6,8 @@
 foxglove_bridge_app:
   ros__parameters:
     port: 8766
-    topic_whitelist: ["^/battery_state_broadcaster/battery_state$"]
+    topic_whitelist: ["^/battery_state_broadcaster/battery_state$", "^/merlin/uptime$"]
     service_whitelist: ["^$"]
     param_whitelist: ["^$"]
+    # The app publishes /cmd_vel and /led_controller/commands.
     capabilities: [clientPublish]

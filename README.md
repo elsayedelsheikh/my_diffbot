@@ -12,6 +12,7 @@ my_diffbot/
 ├── merlin_localization/       # EKF localization config (robot_localization)
 ├── merlin_navigation/         # Nav2 + slam_toolbox params and thin launch wrappers
 ├── merlin_camera_streamer/    # CSI camera -> WebRTC (MediaMTX/WHEP), runs on the Jetson host
+├── merlin_bluetooth/          # BLE provisioning for the app: robot IP, camera password, Wi-Fi/hotspot switching
 ├── merlin_android/            # Android app: camera view + joystick teleop (Gradle, not colcon)
 ├── docker/                    # Dockerfile (base + overlay stages)
 ├── docker-compose.yaml        # Development container services
@@ -101,11 +102,10 @@ staleness on `/diagnostics`. The EKF (`robot_localization`) always runs: it fuse
 `merlin_navigation` owns the params (copied from upstream Jazzy, then tuned for Merlin). `slam.launch.py`
 includes `slam_toolbox/online_async_launch.py`; `navigation.launch.py` mirrors nav2_bringup's composed bringup
 without depending on `nav2_bringup`/`navigation2`, which pull RViz and Gazebo onto the headless Jetson.
-Everything runs on the Jetson, next to `robot-bringup`. The dev machine visualizes and sends goals:
-
-```bash
-rviz2 -d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/rviz/nav2_default_view.rviz
-```
+Everything runs on the Jetson, next to `robot-bringup`. DDS stays on the Jetson's loopback
+(`docker/cyclonedds.xml`): pinned to `wlan0`, every running node lost its peers whenever the robot
+changed Wi-Fi (hotspot, phone hotspot). The dev machine therefore visualizes and sends goals through
+Foxglove (`docker compose up -d foxglove-visualize`, then open `ws://<jetson>:8765`), not `rviz2` over DDS.
 
 ```bash
 # Map: drive around with teleop, then save
@@ -155,8 +155,15 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 (left: forward/back, right: turn), publishing `TwistStamped` on `/cmd_vel` through
 foxglove_bridge's client publish. Full deflection is the base controller's limit (0.35 m/s,
 1.5 rad/s); releasing sends a stop, and a dropped link stops the robot via the controller's
-0.5 s `cmd_vel_timeout`. On the robot run `docker compose up -d foxglove-app` (a lean bridge on port 8766)
-and the camera streamer below, then enter the Jetson IP and camera password in the app.
+0.5 s `cmd_vel_timeout`. On the robot run `docker compose up -d foxglove-app bluetooth` (a lean bridge on
+port 8766 and the Bluetooth setup link) and the camera streamer below.
+
+Tap the status bar to open the setup sheet. **Find robot** (Bluetooth, with the robot's
+`MERLIN_BT_PIN`) fills in the robot's address and camera password and connects; from there one tap moves
+the robot onto its own hotspot (the phone joins it) or onto any Wi-Fi, including the phone's hotspot. The
+address and password can still be typed by hand under *Advanced*. The sheet also switches video/HD and the
+onboard LED. The status bar shows video and drive state, battery, robot uptime and how the phone reaches
+the robot (Wi-Fi, Robot hotspot, Phone hotspot). Protocol and security: `merlin_bluetooth/README.md`.
 
 ```bash
 cd merlin_android

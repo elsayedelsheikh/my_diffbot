@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  CycloneDDS config for the robot over WiFi.
+  CycloneDDS config for the robot: DDS stays on loopback.
 
-  - Pin DDS to the WiFi interface (override with CYCLONE_IFACE=eth0 for a
-    tethered session); without this Cyclone picks eth0 whenever the cable is
-    plugged in at boot and the robot disappears once it is pulled.
-  - Multicast only for discovery (SPDP). WiFi sends multicast at the lowest
-    basic rate with no retries, so user data must stay unicast even when a
-    topic has several remote readers.
+  Everything ROS runs on the Jetson, so DDS never needs the network. Pinning it to
+  wlan0 broke every running node the moment merlin_bluetooth moved wlan0 to another
+  network (robot hotspot, phone hotspot): Cyclone keeps advertising the old address.
+  Loopback has no multicast, so discovery is unicast to the local participant ports.
+  Off-robot tools reach ROS through foxglove_bridge (8765, 8766) instead.
 -->
 <CycloneDDS xmlns="https://cdds.io/config"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -15,9 +14,18 @@
   <Domain Id="any">
     <General>
       <Interfaces>
-        <NetworkInterface name="${CYCLONE_IFACE:-wlan0}" presence_required="false"/>
+        <NetworkInterface name="lo"/>
       </Interfaces>
-      <AllowMulticast>spdp</AllowMulticast>
+      <AllowMulticast>false</AllowMulticast>
     </General>
+    <Discovery>
+      <Peers>
+        <Peer address="localhost"/>
+      </Peers>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <!-- One index per DDS participant (process) on the robot; Nav2 + SLAM + bringup
+           stay well under it. Discovery probes every index, so keep it modest. -->
+      <MaxAutoParticipantIndex>64</MaxAutoParticipantIndex>
+    </Discovery>
   </Domain>
 </CycloneDDS>

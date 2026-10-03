@@ -17,12 +17,14 @@ import java.util.concurrent.TimeUnit
 import javax.net.SocketFactory
 
 /**
- * Minimal Foxglove WebSocket client: advertises /cmd_vel and publishes TwistStamped as JSON
- * through foxglove_bridge's clientPublish capability. Later topics (scan, map...) subscribe here.
+ * Minimal Foxglove WebSocket client: publishes /cmd_vel (TwistStamped) and the LED command as JSON
+ * through foxglove_bridge's clientPublish capability, and reads the battery and the robot's uptime.
+ * Later topics (scan, map...) subscribe here.
  */
 class FoxgloveClient(
     private val onState: (String) -> Unit,
     private val onBattery: (volts: Float, percent: Float) -> Unit = { _, _ -> },
+    private val onUptime: (seconds: Long) -> Unit = {},
 ) {
     // Only flags a dead link in the UI; the robot itself stops on the controller's 0.5 s cmd_vel_timeout.
     // 2 s tripped on Wi-Fi while the same link carries the video stream.
@@ -33,7 +35,7 @@ class FoxgloveClient(
     @Volatile private var ws: WebSocket? = null
     @Volatile private var ready = false
     private val clock = RobotClock()
-    @Volatile private var batterySubscribed = false
+    private val subscribed = mutableSetOf<Int>()  // subscription ids already requested on this socket
 
     fun connect(url: String) {
         close()
@@ -41,7 +43,7 @@ class FoxgloveClient(
             .header("Sec-WebSocket-Protocol", "foxglove.sdk.v1, foxglove.websocket.v1")
             .build()
         onState("connecting")
-        batterySubscribed = false
+        subscribed.clear()
         ws = http.newWebSocket(request, object : WebSocketListener() {
             // A reconnect replaces ws; late callbacks from the old socket must not touch state.
             override fun onMessage(webSocket: WebSocket, text: String) {
@@ -54,7 +56,7 @@ class FoxgloveClient(
                             onState("bridge has no clientPublish")
                             return
                         }
-                        webSocket.send(advertiseCmdVel())
+                        webSocket.send(advertiseChannels())
                         ready = true
                         onState("connected")
                     }
@@ -62,9 +64,8 @@ class FoxgloveClient(
                         val channels = msg.optJSONArray("channels") ?: return
                         for (i in 0 until channels.length()) {
                             val c = channels.getJSONObject(i)
-                            if (c.optString("topic") == BATTERY_TOPIC && !batterySubscribed) {
-                                batterySubscribed = webSocket.send(subscribe(BATTERY_SUB, c.getInt("id")))
-                            }
+                            val sub = SUBSCRIPTIONS[c.optString("topic")] ?: continue
+                            if (subscribed.add(sub)) webSocket.send(subscribe(sub, c.getInt("id")))
                         }
                     }
                 }
@@ -74,9 +75,14 @@ class FoxgloveClient(
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
                 if (webSocket !== ws || bytes.size < 13 || bytes[0] != 0x01.toByte()) return
                 val b = ByteBuffer.wrap(bytes.toByteArray()).order(ByteOrder.LITTLE_ENDIAN)
-                if (b.getInt(1) != BATTERY_SUB) return
-                clock.sample(b.getLong(5) / 1_000_000, System.currentTimeMillis())
-                batteryState(bytes.toByteArray().copyOfRange(13, bytes.size))?.let { (v, pct) -> onBattery(v, pct) }
+                val payload = bytes.toByteArray().copyOfRange(13, bytes.size)
+                when (b.getInt(1)) {
+                    BATTERY_SUB -> {
+                        clock.sample(b.getLong(5) / 1_000_000, System.currentTimeMillis())
+                        batteryState(payload)?.let { (v, pct) -> onBattery(v, pct) }
+                    }
+                    UPTIME_SUB -> uint32(payload)?.let(onUptime)
+                }
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
@@ -104,6 +110,13 @@ class FoxgloveClient(
         return socket.send(clientMessage(CMD_VEL_CHANNEL, twistStampedJson(linear, angular, clock.nowMs() ?: 0)).toByteString())
     }
 
+    /** Onboard RGB LED (led_controller): mode 0 off, 1 solid, 2 blink, 3 alternate; colours 0xRRGGBB. */
+    fun sendLed(mode: Int, color: Int, altColor: Int = 0, periodMs: Int = 500): Boolean {
+        val socket = ws ?: return false
+        if (!ready) return false
+        return socket.send(clientMessage(LED_CHANNEL, ledJson(mode, color, altColor, periodMs)).toByteString())
+    }
+
     fun close() {
         ready = false
         clock.reset()
@@ -114,7 +127,12 @@ class FoxgloveClient(
     companion object {
         const val CMD_VEL_CHANNEL = 1
         const val BATTERY_SUB = 1
-        const val BATTERY_TOPIC = "/battery_state_broadcaster/battery_state"
+        const val UPTIME_SUB = 2
+        const val LED_CHANNEL = 2
+        val SUBSCRIPTIONS = mapOf(
+            "/battery_state_broadcaster/battery_state" to BATTERY_SUB,
+            "/merlin/uptime" to UPTIME_SUB,  // merlin_bluetooth, std_msgs/UInt32 seconds
+        )
 
         fun subscribe(subscriptionId: Int, channelId: Int): String = JSONObject()
             .put("op", "subscribe")
@@ -130,14 +148,25 @@ class FoxgloveClient(
             b.getFloat(pos) to b.getFloat(pos + 24)
         }.getOrNull()
 
-        fun advertiseCmdVel(): String = JSONObject()
-            .put("op", "advertise")
-            .put("channels", JSONArray().put(JSONObject()
-                .put("id", CMD_VEL_CHANNEL)
-                .put("topic", "/cmd_vel")
-                .put("encoding", "json")
-                .put("schemaName", "geometry_msgs/msg/TwistStamped")))
-            .toString()
+        /** std_msgs/UInt32 CDR: 4 B encapsulation, then the value. */
+        fun uint32(cdr: ByteArray): Long? =
+            if (cdr.size < 8) null else ByteBuffer.wrap(cdr).order(ByteOrder.LITTLE_ENDIAN).getInt(4).toLong() and 0xFFFFFFFFL
+
+        fun advertiseChannels(): String {
+            fun channel(id: Int, topic: String, schema: String) = JSONObject()
+                .put("id", id).put("topic", topic).put("encoding", "json").put("schemaName", schema)
+            return JSONObject()
+                .put("op", "advertise")
+                .put("channels", JSONArray()
+                    .put(channel(CMD_VEL_CHANNEL, "/cmd_vel", "geometry_msgs/msg/TwistStamped"))
+                    .put(channel(LED_CHANNEL, "/led_controller/commands", "control_msgs/msg/DynamicInterfaceGroupValues")))
+                .toString()
+        }
+
+        fun ledJson(mode: Int, color: Int, altColor: Int, periodMs: Int): String =
+            """{"header":{"stamp":{"sec":0,"nanosec":0},"frame_id":""},"interface_groups":["led"],""" +
+                """"interface_values":[{"interface_names":["led_mode","led_color","led_color_alt","led_period_ms"],""" +
+                """"values":[$mode.0,$color.0,$altColor.0,$periodMs.0]}]}"""
 
         // Stamped in ROBOT time (see RobotClock) so diff_drive_controller drops anything older than its
         // 0.5 s cmd_vel_timeout: a Wi-Fi stall that delivers commands late can't replay them. 0 = no
